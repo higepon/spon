@@ -1,7 +1,8 @@
 (library (spon tools)
 
     (export download verify decompress install)
-    (import (rnrs) (only (system) %spawn %waitpid))
+    (import (rnrs)
+            (only (mosh process) spawn waitpid))
 
     (define *config-search-path*
         '("~/.spon"
@@ -38,16 +39,16 @@
             config))
 
     (define (download wget uri dir)
-        (let-values (((pid cin cout cerr) (%spawn wget (list "-P" dir uri) '(#f #f #f))))
-            (let-values (((pid status) (%waitpid pid))) (zero? status))))
+        (let-values (((pid cin cout cerr) (spawn wget (list "-P" dir uri) '(#f #f #f))))
+            (let-values (((pid status) (waitpid pid))) (zero? status))))
 
     (define (verify gpg signature file)
-        (let-values (((pid cin cout cerr) (%spawn gpg (list "--verify" signature file) '(#f #f #f))))
-            (let-values (((pid status) (%waitpid pid))) (zero? status))))
+        (let-values (((pid cin cout cerr) (spawn gpg (list "--verify" signature file) '(#f #f #f))))
+            (let-values (((pid status) (waitpid pid))) (zero? status))))
 
     (define (decompress tar file dir)
-        (let-values (((pid cin cout cerr) (%spawn tar (list "-xvzf" file "-C" dir) '(#f #f #f))))
-            (let-values (((pid status) (%waitpid pid))) (zero? status))))
+        (let-values (((pid cin cout cerr) (spawn tar (list "-xvzf" file "-C" dir) '(#f #f #f))))
+            (let-values (((pid status) (waitpid pid))) (zero? status))))
 
     (define (install package)
         (let ((config (get-config)))

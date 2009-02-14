@@ -1,4 +1,6 @@
 2009-02-14  higepon  <higepon@users.sourceforge.jp>
 
+        * tools.mosh.sls (spon): Use (mosh process) instead of (system).
+
         * First import originally from baal's implementation.
 
