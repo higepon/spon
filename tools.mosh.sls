@@ -66,5 +66,5 @@
                         ((download wget pkg-uri src-dir) "OK: package download." "ERROR: package download.")
                         ((download wget sig-uri src-dir) "OK: signature download." "ERROR: signature download.")
                         ((verify gpg sig-file pkg-file) "OK: verify." "ERROR: verify.")
-                        ((decompress tar pkg-file spon-dir) "OK: decompress." "ERROR : decompress."))))))
+                        ((decompress tar pkg-file spon-dir) "OK: decompress." "ERROR: decompress."))))))
     )
