@@ -1,4 +1,4 @@
-(library (spon aux)
+(library (spon base)
   (export verbose? system-name)
   (import (rnrs)
           (srfi :39))

@@ -5,7 +5,7 @@
 (library (spon compat)
   (export do-cmd)
   (import (rnrs)
-          (spon aux)
+          (spon base)
           (only (core) destructuring-bind process process-wait))
 
   (define (do-cmd cmd . args)
