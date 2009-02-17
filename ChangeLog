@@ -1,5 +1,10 @@
 2009-02-17  higepon  <higepon@users.sourceforge.jp>
 
+        * spon: Added spon command.
+          Use like following.
+
+          % sudo ./spon install base64
+
         * tools.sls (spon): Merged leque's code.
 
         * tools.ypsilon.sls: Added by fujita-y.
@@ -9,4 +14,3 @@
         * tools.mosh.sls (spon): Use (mosh process) instead of (system).
 
         * First import originally from baal's implementation.
-

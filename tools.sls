@@ -1,5 +1,5 @@
 (library (spon tools)
-  (export download verify decompress install verbose?)
+  (export download verify decompress install verbose? system-name)
   (import (rnrs)
       (srfi :48)
       (spon aux)
