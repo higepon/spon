@@ -21,7 +21,8 @@
                  (let ((error (get-string-all p-error)))
                    (unless (eof-object? error)
                      (put-string (current-error-port) error)))
-                 (or status (loop (process-wait pid #t))))))  ; nohang = #t
+                 (or status (loop (process-wait pid #t))) ; nohang = #t
+                 (zero? status))))
             (else
              (zero? (process-wait pid #f)))))) ; nohang = #f
   ) ;[end]
