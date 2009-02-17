@@ -5,6 +5,8 @@ if test "" = "$r6rs"; then
   r6rs="`which ypsilon`"
   if test "" = "$r6rs"; then
       echo "R6RS Scheme not found"
+  else
+      echo "TODO"
   fi
 else
     # TODO path to spon.ss
