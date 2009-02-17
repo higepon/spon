@@ -1,5 +1,4 @@
 (library (spon tools)
-
     (export download verify decompress install)
     (import (rnrs)
             (only (mosh process) spawn waitpid))
