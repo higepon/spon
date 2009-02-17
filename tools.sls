@@ -1,9 +1,9 @@
 (library (spon tools)
   (export download verify decompress install verbose? system-name)
   (import (rnrs)
-      (srfi :48)
-      (spon aux)
-      (spon compat))
+          (srfi :48)
+          (spon aux)
+          (spon compat))
 
   (define *config-search-path*
     '("~/.spon"                ; SUSS: portable?
@@ -18,40 +18,33 @@
     (syntax-rules ()
       ((_ (pre cmd ok ng) ...)
        (and (begin
-          (format #t "---->  ~A~%" pre)
-          (let ((res cmd))
-        (if res
-            (when ok
-              (format #t "~A~%" ok))
-            (format #t "---->  ERROR: ~A~%" ng))
-        res))
-        ...))))
+              (format #t "---->  ~A~%" pre)
+              (let ((res cmd))
+                (if res
+                    (when ok
+                      (format #t "~A~%" ok))
+                    (format #t "---->  ERROR: ~A~%" ng))
+                res))
+            ...))))
 
   (define (load-config)
     (let ((config (make-hashtable string-hash string=?))
-      (config-path (find file-exists? *config-search-path*)))
+          (config-path (find file-exists? *config-search-path*)))
       (when config-path
-    (call-with-input-file config-path
-      (lambda (in)
-        #|
-        (for-each
-         (lambda (x)
-           (when (and (pair? x) (pair? (car x)))
-         (hashtable-set! config (format "~A" (car x)) (cdr x))))
-         (read in))
-        |#
-        (let loop ((ls (read in)))
-          (when (and (pair? ls)
-             (pair? (car ls))
-             (string? (caar ls)))
-        (hashtable-set! config (caar ls) (cdar ls))
-        (loop (cdr ls)))))))    ; SUSS: correct?
+        (call-with-input-file config-path
+          (lambda (in)
+            (for-each
+             (lambda (x)
+               (if (not (pair? x))
+                   (error 'load-config "invalid configuration" x)
+                   (hashtable-set! config (format "~A" (car x)) (cdr x))))
+             (read in)))))
       (letrec (($ (case-lambda
-           ((key)
-            ($ key key))
-           ((key default)
-            (hashtable-ref config key default)))))
-    $)))
+                   ((key)
+                    ($ key key))
+                   ((key default)
+                    (hashtable-ref config key default)))))
+        $)))
 
   (define (download wget uri dir)
     (do-cmd wget "-P" dir uri))
@@ -65,32 +58,32 @@
   (define (install package)
     (let (($ (load-config)))
       (let ((wget ($ "wget"))
-        (gpg  ($ "gpg"))
-        (tar  ($ "tar"))
-        (spon-dir ($ "spon-dir" *default-spon-dir*))
-        (spon-uri ($ "spon-uri" *default-spon-uri*)))
-    (let* ((src-dir  (format "~A/src" spon-dir))
-           (arc-name (format "~A.tar.gz" package))
-           (pkg-uri  (format "~A/~A" spon-uri arc-name))
-           (sig-uri  (format "~A.asc" pkg-uri))
-           (pkg-file (format "~A/~A" src-dir arc-name))
-           (sig-file (format "~A.asc" pkg-file)))
-      (do-procs
-       ((format "Downloading package: ~A ..." pkg-uri)
-        (download wget pkg-uri src-dir)
-        #f
-        "failed to download package")
-       ((format "Downloading signature: ~A ..." sig-uri)
-        (download wget sig-uri src-dir)
-        #f
-        "failed to download signature")
-       ("Veryfying package ..."
-        (verify gpg sig-file pkg-file)
-        #f
-        "cannot verify package")
-       ("Decompressing package ..."
-        (decompress tar pkg-file spon-dir)
-        (format "done.\n~A is successfully installed.\n" package)
-        "error in decompressing package")
-       )))))
+            (gpg  ($ "gpg"))
+            (tar  ($ "tar"))
+            (spon-dir ($ "spon-dir" *default-spon-dir*))
+            (spon-uri ($ "spon-uri" *default-spon-uri*)))
+        (let* ((src-dir  (format "~A/src" spon-dir))
+               (arc-name (format "~A.tar.gz" package))
+               (pkg-uri  (format "~A/~A" spon-uri arc-name))
+               (sig-uri  (format "~A.asc" pkg-uri))
+               (pkg-file (format "~A/~A" src-dir arc-name))
+               (sig-file (format "~A.asc" pkg-file)))
+          (do-procs
+           ((format "Downloading package: ~A ..." pkg-uri)
+            (download wget pkg-uri src-dir)
+            #f
+            "failed to download package")
+           ((format "Downloading signature: ~A ..." sig-uri)
+            (download wget sig-uri src-dir)
+            #f
+            "failed to download signature")
+           ("Veryfying package ..."
+            (verify gpg sig-file pkg-file)
+            #f
+            "cannot verify package")
+           ("Decompressing package ..."
+            (decompress tar pkg-file spon-dir)
+            (format "done.\n~A is successfully installed.\n" package)
+            "error in decompressing package")
+           )))))
   )
