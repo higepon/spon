@@ -2,10 +2,10 @@
 ;; tools.slsの(srfi :48)はYpsilonには無いので、
 ;; (srfi :28)にして試してください。
 
-(library (sspan compat)
+(library (spon compat)
   (export do-cmd)
   (import (rnrs)
-          (sspan aux)
+          (spon aux)
           (only (core) destructuring-bind process process-wait))
 
   (define (do-cmd cmd . args)

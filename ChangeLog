@@ -1,5 +1,7 @@
 2009-02-17  higepon  <higepon@users.sourceforge.jp>
 
+        * tools.sls (spon): Merged leque's code.
+
         * tools.ypsilon.sls: Added by fujita-y.
 
 2009-02-14  higepon  <higepon@users.sourceforge.jp>
