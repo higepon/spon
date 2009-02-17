@@ -1,3 +1,7 @@
+2009-02-17  higepon  <higepon@users.sourceforge.jp>
+
+        * tools.ypsilon.sls: Added by fujita-y.
+
 2009-02-14  higepon  <higepon@users.sourceforge.jp>
 
         * tools.mosh.sls (spon): Use (mosh process) instead of (system).
