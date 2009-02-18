@@ -1,0 +1,8 @@
+;; -*- mode: scheme -*-
+(
+ ;; (wget . "/usr/local/bin/wget")
+ (gpg . "/opt/local/bin/gpg")
+ (tar . "/usr/bin/tar")
+ (spon-dir . "/usr/local/share/spon")
+ ;; (spon-uri . "http://scheme-users.jp/spon")
+ )
