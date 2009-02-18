@@ -1,3 +1,7 @@
+2009-02-18  higepon  <higepon@users.sourceforge.jp>
+
+        * compat.mosh.sls (spon): Added (verbose) => #f support.
+
 2009-02-17  higepon  <higepon@users.sourceforge.jp>
 
         * spon: Added spon command.

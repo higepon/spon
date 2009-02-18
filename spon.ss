@@ -5,7 +5,7 @@
 (define (main args)
   (cond
    [(null? (cdr args))
-    (format (current-error-port) "ERROR ~a: package name not specified\n" system-name)
+    (display (format "ERROR ~a: package name not specified\n" system-name) (current-error-port))
     (exit -1)]
    [else
     (install (string->symbol (cadr args)))
