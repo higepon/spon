@@ -15,7 +15,10 @@
 	    (make-implementation-restriction-violation)
 	    (make-who-condition 'do-cmd)
 	    (make-message-condition
-	     "Compatibility layer is not implemented. \
-              Please contact the author of your implementation.")
+             (string-append
+              "Compatibility layer is not implemented. "
+              (string-titlecase system-name)
+              " seems to be not supported your implementation. "
+              "Please consult the author of your implementation."))
 	    (make-irritants-condition (cons cmd args)))))
   )
