@@ -1,8 +1,14 @@
 ;; -*- mode: scheme -*-
+;; vim:ft=scheme
 (
- ;; (wget . "/usr/local/bin/wget")
+ ;; the path to wget command
+ (wget . "/usr/local/bin/wget")
+ ;; the path to gpg command
  (gpg . "/opt/local/bin/gpg")
+ ;; the path to tar command
  (tar . "/usr/bin/tar")
+ ;; the path where packages are installed
  (spon-dir . "/usr/local/share/spon")
- ;; (spon-uri . "http://scheme-users.jp/spon")
+ ;; the URI of the repository
+ (spon-uri . "http://scheme-users.jp/spon")
  )
