@@ -18,7 +18,7 @@
              (string-append
               "Compatibility layer is not implemented. "
               (string-titlecase system-name)
-              " seems to be not supported your implementation. "
+              " seems to be not supported by your implementation. "
               "Please consult the author of your implementation."))
 	    (make-irritants-condition (cons cmd args)))))
   )

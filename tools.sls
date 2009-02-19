@@ -47,7 +47,7 @@
         $)))
 
   (define (download wget uri dir)
-    (do-cmd wget "-P" dir uri))
+    (do-cmd wget "-N" "-P" dir uri))
 
   (define (verify gpg signature file)
     (do-cmd gpg "--verify" signature file))
