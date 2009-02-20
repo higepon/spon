@@ -2,11 +2,16 @@
   (export download verify decompress install verbose? system-name)
   (import (rnrs)
           (srfi :48)
+          (srfi :98)
           (spon base)
           (spon compat))
 
   (define *config-search-path*
-    '("~/.spon"                ; SUSS: portable?
+    `(,@(cond
+         ((get-environment-variable "HOME")
+          => (lambda (home)
+               (list (string-append home "/.spon"))))
+         (else '()))
       "/usr/local/share/spon/sponrc"
       "/usr/share/spon/sponrc"
       "/etc/sponrc"))
