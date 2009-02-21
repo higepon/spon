@@ -69,6 +69,13 @@
       (lambda (key default)
         (hashtable-ref options key default))))
 
+  (define (get-message-level options)
+    (cond
+      ((options "verbose" #f) 'verbose)
+      ((options "silent" #f) 'silent)
+      ((options "quiet" #f) 'silent)
+      (else 'normal)))
+
   (define (cmd-wget uri dir)
     (do-cmd ((get-config) "wget") "-N" "-P" dir uri))
 
@@ -81,50 +88,81 @@
   (define (download package . options-list)
     (let* ((config (get-config))
            (options (get-options options-list))
+           (msg-lvl (get-message-level options))
            (spon-dir (config "spon-dir" *default-spon-dir*))
            (spon-uri (config "spon-uri" *default-spon-uri*))
            (pkg-uri  (format "~A/~A.tar.gz" spon-uri package))
            (sig-uri  (format "~A.asc" pkg-uri))
            (src-dir  (format "~A/src" spon-dir)))
-      (do-procs
-        ((format "Downloading package: ~A ..." pkg-uri)
-         (cmd-wget pkg-uri src-dir)
-         #f
-         "failed to download package.")
-        ((format "Downloading signature: ~A ..." sig-uri)
-         (cmd-wget sig-uri src-dir)
-         #f
-         "failed to download signature."))))
+      (cond
+        ((eq? msg-lvl 'silent) (verbose? #f))
+        ((eq? msg-lvl 'normal) (verbose? #f))
+        ((eq? msg-lvl 'verbose) (verbose? #t)))
+      (cond
+        ((eq? msg-lvl 'silent)
+         (and
+           (cmd-wget pkg-uri src-dir)
+           (cmd-wget sig-uri src-dir)))
+        (else
+          (do-procs
+            ((format "Downloading package: ~A ..." pkg-uri)
+             (cmd-wget pkg-uri src-dir)
+             #f
+             "failed to download package.")
+            ((format "Downloading signature: ~A ..." sig-uri)
+             (cmd-wget sig-uri src-dir)
+             #f
+             "failed to download signature."))))))
 
   (define (verify package . options-list)
     (let* ((config (get-config))
            (options (get-options options-list))
+           (msg-lvl (get-message-level options))
            (spon-dir (config "spon-dir" *default-spon-dir*))
            (pkg-file (format "~A/src/~A.tar.gz" spon-dir package))
            (sig-file (format "~A.asc" pkg-file)))
-      (do-procs
-        ("Veryfying package ..."
-         (cmd-gpg sig-file pkg-file)
-         #f
-         "cannot verify package."))))
+      (cond
+        ((eq? msg-lvl 'silent) (verbose? #f))
+        ((eq? msg-lvl 'normal) (verbose? #f))
+        ((eq? msg-lvl 'verbose) (verbose? #t)))
+      (cond
+        ((eq? msg-lvl 'silent)
+         (cmd-gpg sig-file pkg-file))
+        (else
+          (do-procs
+            ("Veryfying package ..."
+             (cmd-gpg sig-file pkg-file)
+             #f
+             "cannot verify package."))))))
 
   (define (decompress package . options-list)
     (let* ((config (get-config))
            (options (get-options options-list))
+           (msg-lvl (get-message-level options))
            (spon-dir (config "spon-dir" *default-spon-dir*))
            (pkg-file (format "~A/src/~A.tar.gz" spon-dir package)))
-      (do-procs
-        ("Decompressing package ..."
-        (cmd-tar pkg-file spon-dir)
-        #f
-        "error in decompressing package"))))
+      (cond
+        ((eq? msg-lvl 'silent) (verbose? #f))
+        ((eq? msg-lvl 'normal) (verbose? #f))
+        ((eq? msg-lvl 'verbose) (verbose? #t)))
+      (cond
+        ((eq? msg-lvl 'silent)
+         (cmd-tar pkg-file spon-dir))
+        (else
+          (do-procs
+            ("Decompressing package ..."
+            (cmd-tar pkg-file spon-dir)
+            #f
+            "error in decompressing package"))))))
 
   (define (install package . options-list)
-    (let ((r (and (apply download package options-list)
-                  (apply verify package options-list)
-                  (apply decompress package options-list))))
-      (if r
-          (format #t "----> ~A is successfully installed.~%" package)
-          (format #t "----> ~A install failed.~%" package))
-      r))
+    (let ((msg-lvl (get-message-level (get-options options-list))))
+      (let ((r (and (apply download package options-list)
+                    (apply verify package options-list)
+                    (apply decompress package options-list))))
+        (when (or (eq? msg-lvl 'normal) (eq? msg-lvl 'verbose))
+          (if r
+              (format #t "----> ~A is successfully installed.~%" package)
+              (format #t "----> ~A install failed.~%" package)))
+        r)))
   )
