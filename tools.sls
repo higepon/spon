@@ -54,8 +54,8 @@
   (define (get-config)
     (let ((config #f))
       (lambda x
-        (when (not config)
-              (set! config (load-config)))
+        (unless config
+          (set! config (load-config)))
         (apply config x))))
 
   (define (get-options options-list)
@@ -83,8 +83,7 @@
            (options (get-options options-list))
            (spon-dir (config "spon-dir" *default-spon-dir*))
            (spon-uri (config "spon-uri" *default-spon-uri*))
-           (arc-name (format "~A.tar.gz" package))
-           (pkg-uri  (format "~A/~A" spon-uri arc-name))
+           (pkg-uri  (format "~A/~A.tar.gz" spon-uri package))
            (sig-uri  (format "~A.asc" pkg-uri))
            (src-dir  (format "~A/src" spon-dir)))
       (do-procs
@@ -101,9 +100,7 @@
     (let* ((config (get-config))
            (options (get-options options-list))
            (spon-dir (config "spon-dir" *default-spon-dir*))
-           (src-dir  (format "~A/src" spon-dir))
-           (arc-name (format "~A.tar.gz" package))
-           (pkg-file (format "~A/~A" src-dir arc-name))
+           (pkg-file (format "~A/src/~A.tar.gz" spon-dir package))
            (sig-file (format "~A.asc" pkg-file)))
       (do-procs
         ("Veryfying package ..."
@@ -115,9 +112,7 @@
     (let* ((config (get-config))
            (options (get-options options-list))
            (spon-dir (config "spon-dir" *default-spon-dir*))
-           (src-dir  (format "~A/src" spon-dir))
-           (arc-name (format "~A.tar.gz" package))
-           (pkg-file (format "~A/~A" src-dir arc-name)))
+           (pkg-file (format "~A/src/~A.tar.gz" spon-dir package)))
       (do-procs
         ("Decompressing package ..."
         (cmd-tar pkg-file spon-dir)
@@ -125,12 +120,11 @@
         "error in decompressing package"))))
 
   (define (install package . options-list)
-    (let ((r (and
-               (apply download (cons package options-list))
-               (apply verify (cons package options-list))
-               (apply decompress (cons package options-list)))))
+    (let ((r (and (apply download package options-list)
+                  (apply verify package options-list)
+                  (apply decompress package options-list))))
       (if r
-        (format #t "----> ~A is successfully installed.~%" package)
-        (format #t "----> ~A install failed.~%" package))
+          (format #t "----> ~A is successfully installed.~%" package)
+          (format #t "----> ~A install failed.~%" package))
       r))
   )
