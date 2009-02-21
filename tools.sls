@@ -19,14 +19,18 @@
       "/usr/share/spon/sponrc"
       "/etc/sponrc"))
 
-  (define (print . strings)
-    (for-each display strings)
-    (newline))
-
-  (define (print-if bool t f)
-    (if bool
-      (when t (print t))
-      (when f (print f))))
+  (define-syntax do-procs
+    (syntax-rules ()
+      ((_ (pre cmd ok ng) ...)
+       (and (begin
+              (format #t "----> ~A~%" pre)
+              (let ((res cmd))
+                (if res
+                    (when ok
+                      (format #t "----> ~A~%" ok))
+                    (format #t "----> ERROR: ~A~%" ng))
+                res))
+            ...))))
 
   (define (load-config)
     (let ((config (make-hashtable string-hash string=?))
@@ -74,49 +78,59 @@
   (define (cmd-tar file dir)
     (do-cmd ((get-config) "tar") "-xvzf" file "-C" dir))
 
-  (define (download package)
+  (define (download package . options-list)
     (let* ((config (get-config))
+           (options (get-options options-list))
            (spon-dir (config "spon-dir" *default-spon-dir*))
            (spon-uri (config "spon-uri" *default-spon-uri*))
            (arc-name (format "~A.tar.gz" package))
            (pkg-uri  (format "~A/~A" spon-uri arc-name))
            (sig-uri  (format "~A.asc" pkg-uri))
            (src-dir  (format "~A/src" spon-dir)))
-      (print (format "----> Downloading package: ~A ..." pkg-uri))
-      (print-if (cmd-wget pkg-uri src-dir)
-             #f
-             "----> failed to download package.")
-      (print (format "Downloading signature: ~A ..." sig-uri))
-      (print-if (cmd-wget sig-uri src-dir)
-             #f
-             "----> failed to download signature.")))
+      (do-procs
+        ((format "Downloading package: ~A ..." pkg-uri)
+         (cmd-wget pkg-uri src-dir)
+         #f
+         "failed to download package.")
+        ((format "Downloading signature: ~A ..." sig-uri)
+         (cmd-wget sig-uri src-dir)
+         #f
+         "failed to download signature."))))
 
-  (define (verify package)
+  (define (verify package . options-list)
     (let* ((config (get-config))
+           (options (get-options options-list))
            (spon-dir (config "spon-dir" *default-spon-dir*))
            (src-dir  (format "~A/src" spon-dir))
            (arc-name (format "~A.tar.gz" package))
            (pkg-file (format "~A/~A" src-dir arc-name))
            (sig-file (format "~A.asc" pkg-file)))
-      (print "Veryfying package ...")
-      (print-if (cmd-gpg sig-file pkg-file)
-             #f
-             "cannot verify package.")))
+      (do-procs
+        ("Veryfying package ..."
+         (cmd-gpg sig-file pkg-file)
+         #f
+         "cannot verify package."))))
 
-  (define (decompress package)
+  (define (decompress package . options-list)
     (let* ((config (get-config))
+           (options (get-options options-list))
            (spon-dir (config "spon-dir" *default-spon-dir*))
            (src-dir  (format "~A/src" spon-dir))
            (arc-name (format "~A.tar.gz" package))
            (pkg-file (format "~A/~A" src-dir arc-name)))
-      (print "Decompressing package ...")
-      (print-if (cmd-tar pkg-file spon-dir)
-             (format "done.\n~A is successfully installed." package)
-             "error in decompressing package")))
+      (do-procs
+        ("Decompressing package ..."
+        (cmd-tar pkg-file spon-dir)
+        #f
+        "error in decompressing package"))))
 
-  (define (install package)
-    (and
-      (download package)
-      (verify package)
-      (decompress package)))
+  (define (install package . options-list)
+    (let ((r (and
+               (apply download (cons package options-list))
+               (apply verify (cons package options-list))
+               (apply decompress (cons package options-list)))))
+      (if r
+        (format #t "----> ~A is successfully installed.~%" package)
+        (format #t "----> ~A install failed.~%" package))
+      r))
   )
