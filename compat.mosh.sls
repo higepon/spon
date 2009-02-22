@@ -7,7 +7,7 @@
   ;; todo replace with custom port
   (define (spawn2->null command args)
     (let-values ([(in out) (pipe)])
-      (let-values ([(pid cin cout cerr) (spawn command args (list #f out #f))])
+      (let-values ([(pid cin cout cerr) (spawn command args (list #f out out))])
         (close-port out)
         (close-port in)
         (waitpid pid))))

@@ -1,3 +1,9 @@
+2009-02-22  higepon  <higepon@users.sourceforge.jp>
+
+        * tools.sls (spon): Added &i/o-download.
+
+        * spon.ss (main): (quiet? #t).
+
 2009-02-18  higepon  <higepon@users.sourceforge.jp>
 
         * compat.mosh.sls (spon): Added (verbose) => #f support.

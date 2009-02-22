@@ -10,6 +10,9 @@
   (define *default-spon-uri* "http://scheme-users.jp/spon")
   (define *default-spon-dir* "/usr/local/share/spon")
 
+  (define-condition-type &i/o-download &i/o-read
+    make-i/o-download-error i/o-download-error?)
+
   (define *config-search-path*
     `(,@(cond
          ((get-environment-variable "HOME")
