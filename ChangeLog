@@ -1,3 +1,7 @@
+2009-02-23  leque <dico.leque.comicron@gmail.com>
+
+        * tools.sls: quiet external commands down when (quiet?) is #t.
+
 2009-02-22  higepon  <higepon@users.sourceforge.jp>
 
         * tools.sls (spon): Added &i/o-download.

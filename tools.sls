@@ -65,13 +65,19 @@
         (apply config x))))
 
   (define (cmd-wget uri dir)
-    (do-cmd ((get-config) "wget") "-N" "-P" dir uri))
+    (apply do-cmd
+           ((get-config) "wget")
+           "-N" "-P" dir uri (if (quiet?) '("-q") '())))
 
   (define (cmd-gpg signature file)
-    (do-cmd ((get-config) "gpg") "--verify" signature file))
+    (apply do-cmd
+           ((get-config) "gpg")
+           `(,@(if (quiet?) '("-q") '()) "--verify" signature file)))
 
   (define (cmd-tar file dir)
-    (do-cmd ((get-config) "tar") "-xvzf" file "-C" dir))
+    (apply do-cmd
+           ((get-config) "tar")
+           "-xzf" file "-C" dir (if (quiet?) '() ("-v"))))
 
   (define (download package)
     (let* ((config (get-config))
