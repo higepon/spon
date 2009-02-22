@@ -2,6 +2,8 @@
 
         * tools.sls: quiet external commands down when (quiet?) is #t.
 
+        * tools.sls: do not verify package in default.
+
 2009-02-22  higepon  <higepon@users.sourceforge.jp>
 
         * tools.sls (spon): Added &i/o-download.

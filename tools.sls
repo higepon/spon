@@ -70,14 +70,16 @@
            "-N" "-P" dir uri (if (quiet?) '("-q") '())))
 
   (define (cmd-gpg signature file)
-    (apply do-cmd
-           ((get-config) "gpg")
-           `(,@(if (quiet?) '("-q") '()) "--verify" signature file)))
+    (let ((gpg ((get-config) "gpg" #f)))
+      (or (not gpg)
+          (apply do-cmd
+                 gpg
+                 `(,@(if (quiet?) '("-q") '()) "--verify" signature file)))))
 
   (define (cmd-tar file dir)
     (apply do-cmd
            ((get-config) "tar")
-           "-xzf" file "-C" dir (if (quiet?) '() ("-v"))))
+           "-xzf" file "-C" dir (if (quiet?) '() '("-v"))))
 
   (define (download package)
     (let* ((config (get-config))
