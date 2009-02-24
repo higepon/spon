@@ -2,7 +2,7 @@
 
         * tools.sls: quiet external commands down when (quiet?) is #t.
 
-        * tools.sls: do not verify package in default.
+        * tools.sls: do not verify package by default.
 
 2009-02-22  higepon  <higepon@users.sourceforge.jp>
 

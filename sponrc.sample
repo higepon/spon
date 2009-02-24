@@ -2,10 +2,14 @@
 ;; vim:ft=scheme
 (
  ;; the path to wget command
+ ;; default: "wget"
  (wget . "/usr/local/bin/wget")
  ;; the path to gpg command
+ ;; When this value is #f, verification is not executed.
+ ;; default: #f
  (gpg . "/opt/local/bin/gpg")
  ;; the path to tar command
+ ;; default: "tar"
  (tar . "/usr/bin/tar")
  ;; the path where packages are installed
  (spon-dir . "/usr/local/share/spon")
