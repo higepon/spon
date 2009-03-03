@@ -103,12 +103,12 @@
            (spon-dir (config "spon-dir" *default-spon-dir*))
            (pkg-file (format "~A/src/~A.tar.gz" spon-dir package))
            (sig-file (format "~A.asc" pkg-file)))
-      (when (config "gpg" #f)
-        (do-procs
-         ("Veryfying package ..."
-          (cmd-gpg sig-file pkg-file)
-          #f
-          "cannot verify package.")))))
+      (or (not (config "gpg" #f))
+          (do-procs
+           ("Veryfying package ..."
+            (cmd-gpg sig-file pkg-file)
+            #f
+            "cannot verify package.")))))
 
   (define (decompress package)
     (let* ((config (get-config))
