@@ -23,13 +23,11 @@ $INSTALL -v -m 644 tools.sls $SPON_HOME/spon
 
 case "$SCHEME" in
   'mosh')
-    echo "#!/bin/bash" > spon.sh
-    echo "mosh --loadpath=$SPON_HOME $SPON_HOME/spon.ss" >> spon.sh
+    echo -e "#!/bin/bash\nmosh --loadpath=$SPON_HOME $SPON_HOME/spon.ss \$*" > spon.sh
     $INSTALL -v -D -m 755 spon.sh $SPON_COMMAND
     ;;
   'ypsilon')
-    echo "#!/bin/bash" > spon.sh
-    echo "ypsilon --sitelib=$SPON_HOME $SPON_HOME/spon.ss" >> spon.sh
+    echo -e "#!/bin/bash\nypsilon --sitelib=$SPON_HOME $SPON_HOME/spon.ss \$*" > spon.sh
     $INSTALL -v -D -m 755 spon.sh $SPON_COMMAND
     ;;
   *)
