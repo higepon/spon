@@ -1,36 +1,41 @@
-#!/bin/bash
-
-SPON_COMMAND=/usr/local/bin/spon
-SPON_HOME=/usr/local/share/spon
-
-SCHEME=mosh
-#SCHEME=ypsilon
-
+#!/bin/sh
 INSTALL=/usr/bin/install
+
+SCHEME_SCRIPT=${1:-mosh}
+PREFIX=${2:-/usr/local}
+
+SPON_COMMAND=$PREFIX/bin/spon
+SPON_HOME=$PREFIX/share/spon
 
 $INSTALL -v -m 755 -d $SPON_HOME
 $INSTALL -v -m 755 -d $SPON_HOME/doc
 $INSTALL -v -m 755 -d $SPON_HOME/spon
 
-$INSTALL -v -m 644 spon.ss $SPON_HOME
-$INSTALL -v -m 644 sponrc.sample $SPON_HOME/doc
+echo "#!/bin/sh" > spon.sh
 
-$INSTALL -v -m 644 base.sls $SPON_HOME/spon
-$INSTALL -v -m 644 compat.sls $SPON_HOME/spon
-$INSTALL -v -m 644 compat.mosh.sls $SPON_HOME/spon
-$INSTALL -v -m 644 compat.ypsilon.sls $SPON_HOME/spon
-$INSTALL -v -m 644 tools.sls $SPON_HOME/spon
-
-case "$SCHEME" in
+case "$SCHEME_SCRIPT" in
   'mosh')
-    echo -e "#!/bin/bash\nmosh --loadpath=$SPON_HOME $SPON_HOME/spon.ss \$*" > spon.sh
-    $INSTALL -v -D -m 755 spon.sh $SPON_COMMAND
+    echo "mosh --loadpath=$SPON_HOME $SPON_HOME/spon.ss \$*" >> spon.sh
     ;;
   'ypsilon')
-    echo -e "#!/bin/bash\nypsilon --sitelib=$SPON_HOME $SPON_HOME/spon.ss \$*" > spon.sh
-    $INSTALL -v -D -m 755 spon.sh $SPON_COMMAND
+    echo "ypsilon --sitelib=$SPON_HOME $SPON_HOME/spon.ss \$*" >> spon.sh
     ;;
   *)
     echo "ERROR!"
+    exit 1
     ;;
 esac
+
+$INSTALL -v -m 755 spon.sh $SPON_COMMAND
+
+for f in spon.ss; do
+    $INSTALL -v -m 644 $f $SPON_HOME
+done
+
+for f in sponrc.sample; do
+    $INSTALL -v -m 644 $f $SPON_HOME/doc
+done
+
+for f in base.sls compat.sls compat.mosh.sls compat.ypsilon.sls tools.sls; do
+    $INSTALL -v -m 644 $f $SPON_HOME/spon
+done
