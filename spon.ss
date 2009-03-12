@@ -10,13 +10,17 @@
              (current-error-port))
     (exit #f)]
    [else
-    (parameterize ((verbose? #t))
+    (parameterize ((verbose? #f))
+      (guard (exception
+        [(download-error? exception)
+         (format (current-error-port) "\n failed to download package ~a.\n" (download-error-uri exception))]
+        [else (raise exception)])
       (cond
        ((install (cadr args))
         (exit))
        (else
         (display (format "ERROR ~A: install failed\n" system-name)
                  (current-error-port))
-        (exit #f))))]))
+        (exit #f))))])))
 
 (main (command-line))

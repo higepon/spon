@@ -1,3 +1,7 @@
+2009-03-13  higepon  <higepon@users.sourceforge.jp>
+
+        * tools.sls (spon): Use down-load-erro condition. Need refactoring.
+
 2009-02-23  leque <dico.leque.comicron@gmail.com>
 
         * tools.sls: quiet external commands down when (quiet?) is #t.

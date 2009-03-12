@@ -1,6 +1,6 @@
 (library (spon tools)
   (export download verify decompress install
-          system-name verbose? quiet?)
+          system-name verbose? quiet? download-error? download-error-uri)
   (import (rnrs)
           (srfi :48)
           (srfi :98)
@@ -10,8 +10,13 @@
   (define *default-spon-uri* "http://scheme-users.jp/spon")
   (define *default-spon-dir* "/usr/local/share/spon")
 
-  (define-condition-type &i/o-download &i/o-read
-    make-i/o-download-error i/o-download-error?)
+  (define-condition-type &spon &error
+    make-spon-error spon-error?)
+
+  (define-condition-type &download &spon
+    make-download-error download-error?
+    (uri download-error-uri))
+
 
   (define *config-search-path*
     `(,@(cond
@@ -65,9 +70,10 @@
         (apply config x))))
 
   (define (cmd-wget uri dir)
-    (apply do-cmd
-           ((get-config) "wget")
-           "-N" "-P" dir uri (if (quiet?) '("-q") '())))
+    (or (apply do-cmd
+                ((get-config) "wget")
+                "-N" "-P" dir uri (if (quiet?) '("-q") '()))
+         (raise (make-download-error uri))))
 
   (define (cmd-gpg signature file)
     (let ((gpg ((get-config) "gpg" #f)))
@@ -81,6 +87,13 @@
            ((get-config) "tar")
            "-xzf" file "-C" dir (if (quiet?) '() '("-v"))))
 
+  (define (show-progress text)
+    (unless (quiet?)
+      (format #t "----> ~A" text)))
+
+  (define (ok)
+    (display " ok\n"))
+
   (define (download package)
     (let* ((config (get-config))
            (spon-dir (config "spon-dir" *default-spon-dir*))
@@ -88,15 +101,12 @@
            (pkg-uri  (format "~A/~A.tar.gz" spon-uri package))
            (sig-uri  (format "~A.asc" pkg-uri))
            (src-dir  (format "~A/src" spon-dir)))
-      (do-procs
-       ((format "Downloading package: ~A ..." pkg-uri)
-        (cmd-wget pkg-uri src-dir)
-        #f
-        "failed to download package.")
-       ((format "Downloading signature: ~A ..." sig-uri)
-        (cmd-wget sig-uri src-dir)
-        #f
-        "failed to download signature."))))
+      (show-progress (format "Downloading package: ~A ..." pkg-uri))
+      (cmd-wget pkg-uri src-dir)
+      (ok)
+      (show-progress (format "Downloading signature: ~A ..." sig-uri))
+      (cmd-wget sig-uri src-dir)
+      (ok)))
 
   (define (verify package)
     (let* ((config (get-config))
