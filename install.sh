@@ -1,4 +1,5 @@
 #!/bin/sh
+
 INSTALL=/usr/bin/install
 
 SCHEME_SCRIPT=${1:-mosh}
@@ -15,10 +16,10 @@ echo "#!/bin/sh" > spon.sh
 
 case "$SCHEME_SCRIPT" in
   'mosh')
-    echo "mosh --loadpath=$SPON_HOME $SPON_HOME/spon.ss \$*" >> spon.sh
+    echo "mosh $SPON_HOME/spon.ss \$*" >> spon.sh
     ;;
   'ypsilon')
-    echo "ypsilon --sitelib=$SPON_HOME $SPON_HOME/spon.ss \$*" >> spon.sh
+    echo "ypsilon $SPON_HOME/spon.ss \$*" >> spon.sh
     ;;
   *)
     echo "ERROR!"
@@ -28,7 +29,7 @@ esac
 
 $INSTALL -v -m 755 spon.sh $SPON_COMMAND
 
-for f in spon.ss; do
+for f in spon.ss install.mosh.ss; do
     $INSTALL -v -m 644 $f $SPON_HOME
 done
 
@@ -39,3 +40,5 @@ done
 for f in base.sls compat.sls compat.mosh.sls compat.ypsilon.sls tools.sls; do
     $INSTALL -v -m 644 $f $SPON_HOME/spon
 done
+
+$SCHEME_SCRIPT $SPON_HOME/install.$SCHEME_SCRIPT.ss $SPON_HOME
