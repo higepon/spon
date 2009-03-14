@@ -16,8 +16,7 @@
         (cmd-install "-v" "-m" "644" src dst)))
 
 (define (main args)
-    (display args) (newline)
-    #;(let ((spon-dir (cadr args))
+    (let ((spon-dir (cadr args))
           (sitelib-path (string-append (get-config "library-path") "/lib")))
         (mkdir (string-append sitelib-path "/spon"))
         (file-copy
