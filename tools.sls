@@ -17,7 +17,6 @@
     make-download-error download-error?
     (uri download-error-uri))
 
-
   (define *config-search-path*
     `(,@(cond
          ((get-environment-variable "HOME")
@@ -130,10 +129,22 @@
         #f
         "error in decompressing package"))))
 
+  (define (setup package)
+    (let* ((config (get-config))
+           (spon-dir (config "spon-dir" *default-spon-dir*))
+           (impl (current-implementation-name))
+           (install.ss (format "~A/~A/install.~A.ss" spon-dir package impl)))
+      (do-procs
+       ((format "Setup package to ~A ..." impl)
+        (do-cmd impl install.ss)
+        #f
+        (format "error in ~A/install.~A.ss" package impl)))))
+
   (define (install package)
     (let ((r (and (download package)
                   (verify package)
-                  (decompress package))))
+                  (decompress package)
+                  (setup package))))
       (unless (quiet?)
         (if r
           (format #t "----> ~A is successfully installed.~%" package)

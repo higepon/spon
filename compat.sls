@@ -1,8 +1,10 @@
 (library (spon compat)
-  (export do-cmd)
+  (export current-implementation-name do-cmd)
   (import (rnrs)
-	  (spon base)
-	  )
+      (spon base)
+      )
+
+  (define (current-implementation-name) "scheme")
 
   ;; -- do-cmd :: (String, [String]) -> Boolean
   ;; Execute an external command `cmd' with arguments `args'.
@@ -12,13 +14,13 @@
   ;; standard output of the command is discarded.
   (define (do-cmd cmd . args)
     (raise (condition
-	    (make-implementation-restriction-violation)
-	    (make-who-condition 'do-cmd)
-	    (make-message-condition
+        (make-implementation-restriction-violation)
+        (make-who-condition 'do-cmd)
+        (make-message-condition
              (string-append
               "Compatibility layer is not implemented. "
               (string-titlecase system-name)
               " seems to be not supported by your implementation. "
               "Please consult the author of your implementation."))
-	    (make-irritants-condition (cons cmd args)))))
+        (make-irritants-condition (cons cmd args)))))
   )

@@ -1,8 +1,10 @@
 (library (spon compat)
-  (export do-cmd)
+  (export current-implementation-name do-cmd)
   (import (rnrs)
           (spon base)
           (only (mosh process) spawn waitpid pipe))
+
+  (define (current-implementation-name) "mosh")
 
   ;; todo replace with custom port
   (define (spawn2->null command args)
@@ -22,4 +24,4 @@
       (let-values ([(pid status) (spawn2->null cmd args)])
         (zero? status))]))
 
-)
+  )

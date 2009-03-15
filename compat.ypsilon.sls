@@ -3,10 +3,12 @@
 ;; (srfi :28)にして試してください。
 
 (library (spon compat)
-  (export do-cmd)
+  (export current-implementation-name do-cmd)
   (import (rnrs)
           (spon base)
           (only (core) destructuring-bind process process-wait))
+
+  (define (current-implementation-name) "ypsilon")
 
   (define (do-cmd cmd . args)
     (destructuring-bind (pid p-stdin p-stdout p-stderr)
