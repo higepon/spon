@@ -3,12 +3,9 @@
           system-name verbose? quiet? download-error? download-error-uri)
   (import (rnrs)
           (srfi :48)
-          (srfi :98)
           (spon base)
+          (spon config)
           (spon compat))
-
-  (define *default-spon-uri* "http://scheme-users.jp/spon")
-  (define *default-spon-dir* "/usr/local/share/spon")
 
   (define-condition-type &spon &error
     make-spon-error spon-error?)
@@ -16,16 +13,6 @@
   (define-condition-type &download &spon
     make-download-error download-error?
     (uri download-error-uri))
-
-  (define *config-search-path*
-    `(,@(cond
-         ((get-environment-variable "HOME")
-          => (lambda (home)
-               (list (string-append home "/.spon"))))
-         (else '()))
-      "/usr/local/share/spon/sponrc"
-      "/usr/share/spon/sponrc"
-      "/etc/sponrc"))
 
   (define-syntax do-procs
     (syntax-rules ()
@@ -41,32 +28,6 @@
                       (format #t "----> ERROR: ~A~%" ng)))
                 res))
             ...))))
-
-  (define (load-config)
-    (let ((config (make-hashtable string-hash string=?))
-          (config-path (find file-exists? *config-search-path*)))
-      (when config-path
-        (call-with-input-file config-path
-          (lambda (in)
-            (for-each
-             (lambda (x)
-               (if (not (pair? x))
-                   (error 'load-config "invalid configuration" x)
-                   (hashtable-set! config (format "~A" (car x)) (cdr x))))
-             (read in)))))
-      (letrec (($ (case-lambda
-                   ((key)
-                    ($ key key))
-                   ((key default)
-                    (hashtable-ref config key default)))))
-        $)))
-
-  (define (get-config)
-    (let ((config #f))
-      (lambda x
-        (unless config
-          (set! config (load-config)))
-        (apply config x))))
 
   (define (cmd-wget uri dir)
     (or (apply do-cmd
@@ -95,22 +56,21 @@
 
   (define (download package)
     (let* ((config (get-config))
-           (spon-dir (config "spon-dir" *default-spon-dir*))
-           (spon-uri (config "spon-uri" *default-spon-uri*))
+           (spon-uri (config "spon-uri" *spon-uri*))
            (pkg-uri  (format "~A/~A.tar.gz" spon-uri package))
            (sig-uri  (format "~A.asc" pkg-uri))
-           (src-dir  (format "~A/src" spon-dir)))
+           (src-path (config "source-path" *source-path*)))
       (show-progress (format "Downloading package: ~A ..." pkg-uri))
-      (cmd-wget pkg-uri src-dir)
+      (cmd-wget pkg-uri src-path)
       (ok)
       (show-progress (format "Downloading signature: ~A ..." sig-uri))
-      (cmd-wget sig-uri src-dir)
+      (cmd-wget sig-uri src-path)
       (ok)))
 
   (define (verify package)
     (let* ((config (get-config))
-           (spon-dir (config "spon-dir" *default-spon-dir*))
-           (pkg-file (format "~A/src/~A.tar.gz" spon-dir package))
+           (src-path (config "source-path" *source-path*))
+           (pkg-file (format "~A/~A.tar.gz" src-path package))
            (sig-file (format "~A.asc" pkg-file)))
       (or (not (config "gpg" #f))
           (do-procs
@@ -121,19 +81,19 @@
 
   (define (decompress package)
     (let* ((config (get-config))
-           (spon-dir (config "spon-dir" *default-spon-dir*))
-           (pkg-file (format "~A/src/~A.tar.gz" spon-dir package)))
+           (src-path (config "source-path" *source-path*))
+           (pkg-file (format "~A/~A.tar.gz" src-path package)))
       (do-procs
        ("Decompressing package ..."
-        (cmd-tar pkg-file spon-dir)
+        (cmd-tar pkg-file src-path)
         #f
         "error in decompressing package"))))
 
   (define (setup package)
     (let* ((config (get-config))
-           (spon-dir (config "spon-dir" *default-spon-dir*))
+           (src-path (config "source-path" *source-path*))
            (impl (current-implementation-name))
-           (install.ss (format "~A/~A/install.~A.ss" spon-dir package impl)))
+           (install.ss (format "~A/~A/install.~A.ss" src-path package impl)))
       (do-procs
        ((format "Setup package to ~A ..." impl)
         (do-cmd impl install.ss)

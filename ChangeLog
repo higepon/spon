@@ -1,3 +1,7 @@
+2009-03-17  baal  <baal@m-oz.com>
+
+        * config.tmpl.sls : template for generate (spon config). used by install.sh.
+
 2009-03-13  higepon  <higepon@users.sourceforge.jp>
 
         * tools.sls (spon): Use down-load-erro condition. Need refactoring.
