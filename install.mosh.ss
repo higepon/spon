@@ -8,25 +8,26 @@
         (zero? status)))
 
 (define (mkdir dir)
-    (unless (file-exists? dir)
-        (cmd-install "-v" "-m" "755" "-d" dir)))
+    (cmd-install "-v" "-m" "755" "-d" dir))
 
 (define (file-copy src dst)
-    (unless (file-exists? dst)
-        (cmd-install "-v" "-m" "644" src dst)))
+    (cmd-install "-v" "-m" "644" src dst))
 
 (define (main args)
-    (let ((spon-dir (cadr args))
+    (let ((spon-lib (cadr args))
           (sitelib-path (string-append (get-config "library-path") "/lib")))
         (mkdir (string-append sitelib-path "/spon"))
         (file-copy
-            (string-append spon-dir "/spon/base.sls")
+            (string-append spon-lib "/spon/base.sls")
             (string-append sitelib-path "/spon/base.sls"))
         (file-copy
-            (string-append spon-dir "/spon/compat.mosh.sls")
+            (string-append spon-lib "/spon/compat.mosh.sls")
             (string-append sitelib-path "/spon/compat.sls"))
         (file-copy
-            (string-append spon-dir "/spon/tools.sls")
+            (string-append spon-lib "/spon/config.sls")
+            (string-append sitelib-path "/spon/config.sls"))
+        (file-copy
+            (string-append spon-lib "/spon/tools.sls")
             (string-append sitelib-path "/spon/tools.sls"))))
 
 (main (command-line))
