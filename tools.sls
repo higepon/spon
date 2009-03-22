@@ -1,5 +1,5 @@
 (library (spon tools)
-  (export download verify decompress install
+  (export download verify decompress initialize setup install
           system-name verbose? quiet? download-error? download-error-uri)
   (import (rnrs)
           (srfi :48)
@@ -89,21 +89,33 @@
         #f
         "error in decompressing package"))))
 
+  (define (initialize package)
+    (let* ((config (get-config))
+           (src-path (config "source-path" *source-path*))
+           (impl (current-implementation-name))
+           (install.ss (format "~A/~A/install.ss" src-path package)))
+      (do-procs
+       ("Setup package to spon's library"
+        (do-cmd impl install.ss)
+        #f
+        (format "error in ~A" install.ss)))))
+
   (define (setup package)
     (let* ((config (get-config))
            (src-path (config "source-path" *source-path*))
            (impl (current-implementation-name))
-           (install.ss (format "~A/~A/install.~A.ss" src-path package impl)))
+           (setup.ss (format "~A/~A/setup.~A.ss" src-path package impl)))
       (do-procs
        ((format "Setup package to ~A ..." impl)
-        (do-cmd impl install.ss)
+        (do-cmd impl setup.ss)
         #f
-        (format "error in ~A/install.~A.ss" package impl)))))
+        (format "error in ~A" setup.ss)))))
 
   (define (install package)
     (let ((r (and (download package)
                   (verify package)
                   (decompress package)
+                  (initialize package)
                   (setup package))))
       (unless (quiet?)
         (if r

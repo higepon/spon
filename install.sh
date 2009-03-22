@@ -48,7 +48,7 @@ $INSTALL -v -m 755 -d $SPON_SRC
 
 $INSTALL -v -m 755 spon.sh $SPON_COMMAND
 
-for f in spon.ss install.mosh.ss; do
+for f in spon.ss setup.mosh.ss; do
     $INSTALL -v -m 644 $f $SPON_HOME
 done
 
@@ -60,4 +60,4 @@ for f in base.sls compat.sls compat.mosh.sls compat.ypsilon.sls config.sls tools
     $INSTALL -v -m 644 $f $SPON_LIB/spon
 done
 
-$SCHEME_SCRIPT $SPON_HOME/install.$SCHEME_SCRIPT.ss $SPON_LIB
+$SCHEME_SCRIPT $SPON_HOME/setup.$SCHEME_SCRIPT.ss $SPON_LIB
