@@ -1,10 +1,9 @@
 (library (spon compat)
-  (export current-implementation-name do-cmd)
+  (export current-system-name do-cmd)
   (import (rnrs)
-      (spon base)
-      )
+          (spon config))
 
-  (define (current-implementation-name) "scheme")
+  (define (current-system-name) "scheme")
 
   ;; -- do-cmd :: (String, [String]) -> Boolean
   ;; Execute an external command `cmd' with arguments `args'.

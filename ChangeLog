@@ -1,3 +1,8 @@
+2009-04-05  baal  <baal@m-oz.com>
+
+        * config.tmpl.sls : marge to base.sls.
+        * spon command : remove. spon command is made in install.sh.
+
 2009-03-17  baal  <baal@m-oz.com>
 
         * config.tmpl.sls : template for generate (spon config). used by install.sh.

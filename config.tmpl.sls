@@ -1,38 +1,42 @@
 (library (spon config)
 
-  (export *spon-uri* *spon-home*
-          *command-path* *library-path*
-          *document-path* *source-path*
-          *share-path* *temporary-path*
-          *config-search-path*
+  (export system-name
+          verbose? quiet?
+          spon-uri spon-home
+          command-path library-path
+          document-path source-path
+          share-path temporary-path
+          config-search-path
           load-config get-config)
 
   (import (rnrs)
+          (srfi :39)
           (srfi :48)
           (srfi :98))
 
-  (define *spon-uri* "http://scheme-users.jp/spon")
-  (define *spon-home* "/usr/local/share/spon")
-  (define *command-path* "/usr/local/bin/spon")
-  (define *library-path* "/usr/local/share/spon/lib")
-  (define *document-path* "/usr/local/share/spon/doc")
-  (define *source-path* "/usr/local/share/spon/src")
-  (define *share-path* "/usr/local/share/spon/share")
-  (define *temporary-path* "/tmp")
+  (define system-name "spon")
+  (define spon-uri "http://scheme-users.jp/spon")
+  (define spon-home "/usr/local/share/spon")
+  (define command-path "/usr/local/bin/spon")
+  (define library-path "/usr/local/share/spon/lib")
+  (define document-path "/usr/local/share/spon/doc")
+  (define source-path "/usr/local/share/spon/src")
+  (define share-path "/usr/local/share/spon/share")
+  (define temporary-path "/tmp")
 
-  (define *config-search-path*
+  (define config-search-path
     `(,@(cond
          ((get-environment-variable "HOME")
           => (lambda (home)
                (list (string-append home "/.spon"))))
          (else '()))
-      ,(string-append *spon-home* "/sponrc")
+      ,(string-append spon-home "/sponrc")
       "/usr/share/spon/sponrc"
       "/etc/sponrc"))
 
   (define (load-config)
     (let ((config (make-hashtable string-hash string=?))
-          (config-path (find file-exists? *config-search-path*)))
+          (config-path (find file-exists? config-search-path)))
       (when config-path
         (call-with-input-file config-path
           (lambda (in)
@@ -55,4 +59,13 @@
         (unless config
           (set! config (load-config)))
         (apply config x))))
+
+  (define verbose? (make-parameter #f))
+
+  ;; (quiet? #t) implies (verbose? #f).
+  (define quiet? (make-parameter #f
+                   (lambda (v)
+                     (when v
+                       (verbose? #f))
+                     v)))
   )

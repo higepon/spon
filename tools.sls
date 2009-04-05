@@ -1,9 +1,8 @@
 (library (spon tools)
-  (export download verify decompress initialize setup install
+  (export download verify decompress initialize setup install cmd-install
           system-name verbose? quiet? download-error? download-error-uri)
   (import (rnrs)
           (srfi :48)
-          (spon base)
           (spon config)
           (spon compat))
 
@@ -47,6 +46,9 @@
            ((get-config) "tar")
            "-xzf" file "-C" dir (if (quiet?) '() '("-v"))))
 
+  (define (cmd-install . args)
+    (apply do-cmd ((get-config) "install") args))
+
   (define (show-progress text)
     (unless (quiet?)
       (format #t "----> ~A" text)))
@@ -56,10 +58,10 @@
 
   (define (download package)
     (let* ((config (get-config))
-           (spon-uri (config "spon-uri" *spon-uri*))
+           (spon-uri (config "spon-uri" spon-uri))
            (pkg-uri  (format "~A/~A.tar.gz" spon-uri package))
            (sig-uri  (format "~A.asc" pkg-uri))
-           (src-path (config "source-path" *source-path*)))
+           (src-path (config "source-path" source-path)))
       (show-progress (format "Downloading package: ~A ..." pkg-uri))
       (cmd-wget pkg-uri src-path)
       (ok)
@@ -69,7 +71,7 @@
 
   (define (verify package)
     (let* ((config (get-config))
-           (src-path (config "source-path" *source-path*))
+           (src-path (config "source-path" source-path))
            (pkg-file (format "~A/~A.tar.gz" src-path package))
            (sig-file (format "~A.asc" pkg-file)))
       (or (not (config "gpg" #f))
@@ -81,7 +83,7 @@
 
   (define (decompress package)
     (let* ((config (get-config))
-           (src-path (config "source-path" *source-path*))
+           (src-path (config "source-path" source-path))
            (pkg-file (format "~A/~A.tar.gz" src-path package)))
       (do-procs
        ("Decompressing package ..."
@@ -91,23 +93,31 @@
 
   (define (initialize package)
     (let* ((config (get-config))
-           (src-path (config "source-path" *source-path*))
-           (impl (current-implementation-name))
-           (install.ss (format "~A/~A/install.ss" src-path package)))
+           (impl (current-system-name))
+           (src-path (config "source-path" source-path))
+           (pkg-path (format "~A/~A" source-path package))
+           (install.ss (format "~A/install.ss" pkg-path)))
       (do-procs
-       ("Setup package to spon's library"
-        (do-cmd impl install.ss)
+       ("Setup package to SPON's library"
+        (let ((cwd (current-directory)))
+          (set-current-directory! pkg-path)
+          (let ((r (do-cmd impl install.ss pkg-path)))
+            (set-current-directory! cwd) r))
         #f
         (format "error in ~A" install.ss)))))
 
   (define (setup package)
     (let* ((config (get-config))
-           (src-path (config "source-path" *source-path*))
-           (impl (current-implementation-name))
-           (setup.ss (format "~A/~A/setup.~A.ss" src-path package impl)))
+           (impl (current-system-name))
+           (src-path (config "source-path" source-path))
+           (pkg-path (format "~A/~A" source-path package))
+           (setup.ss (format "~A/setup.~A.ss" pkg-path impl)))
       (do-procs
        ((format "Setup package to ~A ..." impl)
-        (do-cmd impl setup.ss)
+        (let ((cwd (current-directory)))
+          (set-current-directory! pkg-path)
+          (let ((r (do-cmd impl setup.ss pkg-path)))
+            (set-current-directory! cwd) r))
         #f
         (format "error in ~A" setup.ss)))))
 

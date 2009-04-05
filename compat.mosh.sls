@@ -1,10 +1,14 @@
 (library (spon compat)
-  (export current-implementation-name do-cmd)
+  (export current-system-name
+          current-directory
+          set-current-directory!
+          do-cmd)
   (import (rnrs)
-          (spon base)
-          (only (mosh process) spawn waitpid pipe))
+          (spon config)
+          (only (mosh process) spawn waitpid pipe)
+          (only (mosh) current-directory set-current-directory!))
 
-  (define (current-implementation-name) "mosh")
+  (define (current-system-name) "mosh")
 
   ;; todo replace with custom port
   (define (spawn2->null command args)
