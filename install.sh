@@ -39,7 +39,7 @@ for f in spon.mosh.sh spon.ypsilon.sh; do
     $INSTALL -v -m 755 $f $SPON_HOME
 done
 
-for f in spon.ss setup.mosh.ss; do
+for f in spon.ss setup.mosh.ss setup.ypsilon.ss; do
     $INSTALL -v -m 644 $f $SPON_HOME
 done
 

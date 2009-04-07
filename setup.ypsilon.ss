@@ -1,11 +1,14 @@
 (import (rnrs)
-        (only (mosh config) get-config)
-        (only (mosh process) spawn waitpid))
+        (only (core)
+          destructuring-bind
+          process process-wait
+          scheme-library-paths))
 
 (define (cmd-install . args)
-  (let*-values (((pid . _) (spawn "install" args '(#f #f #f)))
-                ((pid status) (waitpid pid)))
-    (zero? status)))
+  (destructuring-bind
+    (pid p-stdin p-stdout p-stderr)
+    (apply process "install" args)
+    (zero? (process-wait pid #f))))
 
 (define (mkdir dir)
   (cmd-install "-v" "-m" "755" "-d" dir))
@@ -15,10 +18,10 @@
 
 (define (main args)
   (let ((spon-lib (cadr args))
-        (sitelib-path (string-append (get-config "library-path") "/lib")))
+        (sitelib-path (car (scheme-library-paths))))
     (mkdir (string-append sitelib-path "/spon"))
     (file-copy
-        (string-append spon-lib "/spon/compat.mosh.sls")
+        (string-append spon-lib "/spon/compat.ypsilon.sls")
         (string-append sitelib-path "/spon/compat.sls"))
     (file-copy
         (string-append spon-lib "/spon/config.sls")
