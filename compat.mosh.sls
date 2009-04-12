@@ -1,12 +1,14 @@
 (library (spon compat)
   (export current-system-name
+          command
+          file-copy
+          make-directory
           current-directory
-          set-current-directory!
-          do-cmd)
+          set-current-directory!)
   (import (rnrs)
-          (spon config)
+          (only (mosh) current-directory set-current-directory!)
           (only (mosh process) spawn waitpid pipe)
-          (only (mosh) current-directory set-current-directory!))
+          (spon config))
 
   (define (current-system-name) "mosh")
 
@@ -18,7 +20,7 @@
         (close-port in)
         (waitpid pid))))
 
-  (define (do-cmd cmd . args)
+  (define (command cmd . args)
     (cond
      [(verbose?)
       (let*-values ([(pid . _) (spawn cmd args '(#f #f #f))]
@@ -27,5 +29,11 @@
      [else
       (let-values ([(pid status) (spawn2->null cmd args)])
         (zero? status))]))
+
+  (define (file-copy src dst mode)
+    (command "install" "-m" (number->string mode 8) src dst))
+
+  (define (make-directory dir mode)
+    (command "install" "-m" (number->string mode 8) "-d" dir))
 
   )

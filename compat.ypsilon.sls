@@ -3,14 +3,19 @@
 ;; (srfi :28)にして試してください。
 
 (library (spon compat)
-  (export current-system-name do-cmd)
+  (export current-system-name
+          command
+          file-copy
+          make-directory
+          current-directory
+          set-current-directory!)
   (import (rnrs)
-          (spon config)
-          (only (core) destructuring-bind process process-wait))
+          (only (core) destructuring-bind process process-wait)
+          (spon config))
 
   (define (current-system-name) "ypsilon")
 
-  (define (do-cmd cmd . args)
+  (define (command cmd . args)
     (destructuring-bind (pid p-stdin p-stdout p-stderr)
         (apply process cmd args)
       (cond ((verbose?)
@@ -27,5 +32,19 @@
                  (zero? status))))
             (else
              (zero? (process-wait pid #f)))))) ; nohang = #f
+
+  (define (file-copy src dst mode)
+    (command "install" "-m" (number->string mode 8) src dst))
+
+  (define (make-directory dir mode)
+    (command "install" "-m" (number->string mode 8) "-d" dir))
+
+  (define (current-directory)
+    ;; TODO
+    #f)
+
+  (define (set-current-directory!)
+    ;; TODO
+    #f)
 
   ) ;[end]

@@ -1,6 +1,9 @@
 (library (spon tools)
-  (export download verify decompress initialize setup install cmd-install
-          system-name verbose? quiet? download-error? download-error-uri)
+  (export download verify decompress initialize setup install
+          system-name verbose? quiet? download-error? download-error-uri
+          current-system-name command
+          file-copy make-directory
+          current-directory set-current-directory!)
   (import (rnrs)
           (srfi :48)
           (spon config)
@@ -29,7 +32,7 @@
             ...))))
 
   (define (cmd-wget uri dir)
-    (or (apply do-cmd
+    (or (apply command
                 ((get-config) "wget")
                 "-N" "-P" dir uri (if (quiet?) '("-q") '()))
          (raise (make-download-error uri))))
@@ -37,17 +40,14 @@
   (define (cmd-gpg signature file)
     (let ((gpg ((get-config) "gpg" #f)))
       (or (not gpg)
-          (apply do-cmd
+          (apply command
                  gpg
                  `(,@(if (quiet?) '("-q") '()) "--verify" signature file)))))
 
   (define (cmd-tar file dir)
-    (apply do-cmd
+    (apply command
            ((get-config) "tar")
            "-xzf" file "-C" dir (if (quiet?) '() '("-v"))))
-
-  (define (cmd-install . args)
-    (apply do-cmd ((get-config) "install") args))
 
   (define (show-progress text)
     (unless (quiet?)
@@ -98,10 +98,10 @@
            (pkg-path (format "~A/~A" source-path package))
            (install.ss (format "~A/install.ss" pkg-path)))
       (do-procs
-       ("Setup package to SPON's library"
+       ("Setup package to SPON ..."
         (let ((cwd (current-directory)))
           (set-current-directory! pkg-path)
-          (let ((r (do-cmd impl install.ss pkg-path)))
+          (let ((r (command impl install.ss pkg-path)))
             (set-current-directory! cwd) r))
         #f
         (format "error in ~A" install.ss)))))
@@ -116,7 +116,7 @@
        ((format "Setup package to ~A ..." impl)
         (let ((cwd (current-directory)))
           (set-current-directory! pkg-path)
-          (let ((r (do-cmd impl setup.ss pkg-path)))
+          (let ((r (command impl setup.ss pkg-path)))
             (set-current-directory! cwd) r))
         #f
         (format "error in ~A" setup.ss)))))

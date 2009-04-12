@@ -10,24 +10,24 @@
     (apply process "install" args)
     (zero? (process-wait pid #f))))
 
-(define (mkdir dir)
-  (cmd-install "-v" "-m" "755" "-d" dir))
+(define (file-copy src dst mode)
+  (cmd-install "-v" "-m" (number->string mode 8) src dst))
 
-(define (file-copy src dst)
-  (cmd-install "-v" "-m" "644" src dst))
+(define (make-directory dir mode)
+  (cmd-install "-v" "-m" (number->string mode 8) "-d" dir))
 
 (define (main args)
   (let ((spon-lib (cadr args))
         (sitelib-path (car (scheme-library-paths))))
-    (mkdir (string-append sitelib-path "/spon"))
+    (make-directory (string-append sitelib-path "/spon") #o755)
     (file-copy
         (string-append spon-lib "/spon/compat.ypsilon.sls")
-        (string-append sitelib-path "/spon/compat.sls"))
+        (string-append sitelib-path "/spon/compat.sls") #o644)
     (file-copy
         (string-append spon-lib "/spon/config.sls")
-        (string-append sitelib-path "/spon/config.sls"))
+        (string-append sitelib-path "/spon/config.sls") #o644)
     (file-copy
         (string-append spon-lib "/spon/tools.sls")
-        (string-append sitelib-path "/spon/tools.sls"))))
+        (string-append sitelib-path "/spon/tools.sls") #o644)))
 
 (main (command-line))
