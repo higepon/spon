@@ -1,16 +1,17 @@
-;; (verbose? #t)でメッセージが出力されます
-;; tools.slsの(srfi :48)はYpsilonには無いので、
-;; (srfi :28)にして試してください。
-
 (library (spon compat)
   (export current-system-name
           command
           file-copy
           make-directory
+          make-symbolic-link
           current-directory
           set-current-directory!)
   (import (rnrs)
-          (only (core) destructuring-bind process process-wait)
+          (only (core)
+                current-directory
+                destructuring-bind
+                process
+                process-wait)
           (spon config))
 
   (define (current-system-name) "ypsilon")
@@ -39,12 +40,10 @@
   (define (make-directory dir mode)
     (command "install" "-m" (number->string mode 8) "-d" dir))
 
-  (define (current-directory)
-    ;; TODO
-    #f)
+  (define (make-symbolic-link target link)
+    (command "ln" "-sf" target link))
 
-  (define (set-current-directory!)
-    ;; TODO
-    #f)
+  (define (set-current-directory! dir)
+    (current-directory dir))
 
   ) ;[end]

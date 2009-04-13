@@ -2,7 +2,7 @@
   (export download verify decompress initialize setup install
           system-name verbose? quiet? download-error? download-error-uri
           current-system-name command
-          file-copy make-directory
+          file-copy make-directory make-symbolic-link
           current-directory set-current-directory!)
   (import (rnrs)
           (srfi :48)

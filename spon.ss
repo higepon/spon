@@ -1,26 +1,34 @@
 (import (rnrs)
         (srfi :39)
         (srfi :48)
-        (spon tools))
+        (spon tools)
+        (spon config))
 
 (define (main args)
-  (cond
-   [(null? (cdr args))
-    (display (format "ERROR ~a: package name not specified\n" system-name)
-             (current-error-port))
-    (exit #f)]
-   [else
-    (parameterize ((verbose? #f))
-      (guard (exception
-        [(download-error? exception)
-         (format (current-error-port) "\n failed to download package ~a.\n" (download-error-uri exception))]
-        [else (raise exception)])
-      (cond
-       ((install (cadr args))
-        (exit))
-       (else
-        (display (format "ERROR ~A: install failed\n" system-name)
+  (case (string->symbol (cadr args))
+    ((install)
+     (cond
+       [(null? (cddr args))
+        (display (format "ERROR ~a: package name not specified\n" system-name)
                  (current-error-port))
-        (exit #f))))])))
+        (exit #f)]
+       [else
+         (parameterize ((verbose? #f))
+           (guard (exception
+             [(download-error? exception)
+              (format (current-error-port) "\n failed to download package ~a.\n" (download-error-uri exception))]
+             [else (raise exception)])
+             (cond
+               ((install (caddr args))
+                (exit))
+               (else
+                 (display (format "ERROR ~A: install failed\n" system-name)
+                          (current-error-port))
+                 (exit #f)))))]))
+    ((use)
+     (let ((impl (caddr args)))
+       (command impl (string-append spon-home "/setup." impl ".ss") library-path)
+       (make-symbolic-link (string-append spon-home "/spon." impl ".sh") command-path)))
+    (else (exit #f))))
 
 (main (command-line))

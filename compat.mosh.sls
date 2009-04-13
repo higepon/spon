@@ -3,6 +3,7 @@
           command
           file-copy
           make-directory
+          make-symbolic-link
           current-directory
           set-current-directory!)
   (import (rnrs)
@@ -35,5 +36,8 @@
 
   (define (make-directory dir mode)
     (command "install" "-m" (number->string mode 8) "-d" dir))
+
+  (define (make-symbolic-link target link)
+    (command "ln" "-sf" target link))
 
   )
