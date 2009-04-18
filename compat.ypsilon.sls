@@ -1,5 +1,5 @@
 (library (spon compat)
-  (export current-system-name
+  (export current-implementation-name
           command
           file-copy
           make-directory
@@ -14,7 +14,7 @@
                 process-wait)
           (spon config))
 
-  (define (current-system-name) "ypsilon")
+  (define (current-implementation-name) "ypsilon")
 
   (define (command cmd . args)
     (destructuring-bind (pid p-stdin p-stdout p-stderr)

@@ -1,5 +1,5 @@
 (library (spon compat)
-  (export current-system-name
+  (export current-implementation-name
           command
           file-copy
           make-directory
@@ -9,7 +9,7 @@
   (import (rnrs)
           (spon config))
 
-  (define (current-system-name) "scheme")
+  (define (current-implementation-name) "scheme")
 
   ;; -- command :: (String, [String]) -> Boolean
   ;; Execute an external command `cmd' with arguments `args'.

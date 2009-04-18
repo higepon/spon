@@ -2,7 +2,7 @@
 
   (export system-name
           verbose? quiet?
-          spon-uri spon-home
+          download-uri base-path
           command-path library-path
           document-path source-path
           share-path temporary-path
@@ -15,8 +15,8 @@
           (srfi :98))
 
   (define system-name "spon")
-  (define spon-uri "http://scheme-users.jp/spon")
-  (define spon-home "/usr/local/share/spon")
+  (define download-uri "http://scheme-users.jp/spon")
+  (define base-path "/usr/local/share/spon")
   (define command-path "/usr/local/bin/spon")
   (define library-path "/usr/local/share/spon/lib")
   (define document-path "/usr/local/share/spon/doc")
@@ -30,7 +30,7 @@
           => (lambda (home)
                (list (string-append home "/.spon"))))
          (else '()))
-      ,(string-append spon-home "/sponrc")
+      ,(string-append base-path "/sponrc")
       "/usr/share/spon/sponrc"
       "/etc/sponrc"))
 

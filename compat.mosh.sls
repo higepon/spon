@@ -1,5 +1,5 @@
 (library (spon compat)
-  (export current-system-name
+  (export current-implementation-name
           command
           file-copy
           make-directory
@@ -11,7 +11,7 @@
           (only (mosh process) spawn waitpid pipe)
           (spon config))
 
-  (define (current-system-name) "mosh")
+  (define (current-implementation-name) "mosh")
 
   ;; todo replace with custom port
   (define (spawn2->null command args)

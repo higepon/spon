@@ -16,8 +16,8 @@ SPON_SRC=$SPON_HOME/src
 SPON_SHARE=$SPON_HOME/share
 SPON_TMP=/tmp
 
-$SED -e "18 c (define spon-uri \"$SPON_URI\")" \
-     -e "19 c (define spon-home \"$SPON_HOME\")" \
+$SED -e "18 c (define download-uri \"$SPON_URI\")" \
+     -e "19 c (define base-path \"$SPON_HOME\")" \
      -e "20 c (define command-path \"$SPON_COMMAND\")" \
      -e "21 c (define library-path \"$SPON_LIB\")" \
      -e "22 c (define document-path \"$SPON_DOC\")" \
@@ -51,5 +51,8 @@ for f in compat.sls compat.mosh.sls compat.ypsilon.sls config.sls tools.sls; do
     $INSTALL -v -m 644 $f $SPON_LIB/spon
 done
 
-$SCHEME_SCRIPT $SPON_HOME/setup.$SCHEME_SCRIPT.ss $SPON_LIB
-$LN -s $SPON_HOME/spon.$SCHEME_SCRIPT.sh $SPON_COMMAND
+CWD=`pwd`
+cd $SPON_LIB
+$SCHEME_SCRIPT $SPON_HOME/setup.$SCHEME_SCRIPT.ss
+cd $CWD
+$LN -sf $SPON_HOME/spon.$SCHEME_SCRIPT.sh $SPON_COMMAND

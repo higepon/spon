@@ -27,8 +27,8 @@
                  (exit #f)))))]))
     ((use)
      (let ((impl (caddr args)))
-       (command impl (string-append spon-home "/setup." impl ".ss") library-path)
-       (make-symbolic-link (string-append spon-home "/spon." impl ".sh") command-path)))
+       (command impl (string-append base-path "/setup." impl ".ss") library-path)
+       (make-symbolic-link (string-append base-path "/spon." impl ".sh") command-path)))
     (else (exit #f))))
 
 (main (command-line))

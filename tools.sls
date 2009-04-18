@@ -1,7 +1,7 @@
 (library (spon tools)
   (export download verify decompress initialize setup install
           system-name verbose? quiet? download-error? download-error-uri
-          current-system-name command
+          current-implementation-name command
           file-copy make-directory make-symbolic-link
           current-directory set-current-directory!)
   (import (rnrs)
@@ -58,8 +58,8 @@
 
   (define (download package)
     (let* ((config (get-config))
-           (spon-uri (config "spon-uri" spon-uri))
-           (pkg-uri  (format "~A/~A.tar.gz" spon-uri package))
+           (download-uri (config "download-uri" download-uri))
+           (pkg-uri  (format "~A/~A.tar.gz" download-uri package))
            (sig-uri  (format "~A.asc" pkg-uri))
            (src-path (config "source-path" source-path)))
       (show-progress (format "Downloading package: ~A ..." pkg-uri))
@@ -93,30 +93,31 @@
 
   (define (initialize package)
     (let* ((config (get-config))
-           (impl (current-system-name))
+           (impl (current-implementation-name))
            (src-path (config "source-path" source-path))
            (pkg-path (format "~A/~A" source-path package))
            (install.ss (format "~A/install.ss" pkg-path)))
       (do-procs
-       ("Setup package to SPON ..."
+       ((format "Setup package to ~A ..." (string-upcase system-name))
         (let ((cwd (current-directory)))
           (set-current-directory! pkg-path)
-          (let ((r (command impl install.ss pkg-path)))
+          (let ((r (command impl install.ss)))
             (set-current-directory! cwd) r))
         #f
         (format "error in ~A" install.ss)))))
 
   (define (setup package)
     (let* ((config (get-config))
-           (impl (current-system-name))
+           (impl (current-implementation-name))
            (src-path (config "source-path" source-path))
            (pkg-path (format "~A/~A" source-path package))
-           (setup.ss (format "~A/setup.~A.ss" pkg-path impl)))
+           (setup.ss (format "~A/setup.ss" pkg-path))
+           (setup.impl.ss (format "~A/setup.~A.ss" pkg-path impl)))
       (do-procs
        ((format "Setup package to ~A ..." impl)
         (let ((cwd (current-directory)))
           (set-current-directory! pkg-path)
-          (let ((r (command impl setup.ss pkg-path)))
+          (let ((r (command impl (if (file-exists? setup.impl.ss) setup.impl.ss setup.ss))))
             (set-current-directory! cwd) r))
         #f
         (format "error in ~A" setup.ss)))))
