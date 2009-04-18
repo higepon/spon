@@ -19,11 +19,11 @@
 (define (main args)
   (let ((library-path (car (scheme-library-paths))))
     (make-directory (string-append library-path "/spon") #o755)
-    (file-copy "/spon/compat.ypsilon.sls"
+    (file-copy "./spon/compat.ypsilon.sls"
         (string-append library-path "/spon/compat.sls") #o644)
-    (file-copy "/spon/config.sls"
+    (file-copy "./spon/config.sls"
         (string-append library-path "/spon/config.sls") #o644)
-    (file-copy "/spon/tools.sls"
+    (file-copy "./spon/tools.sls"
         (string-append library-path "/spon/tools.sls") #o644)))
 
 (main (command-line))

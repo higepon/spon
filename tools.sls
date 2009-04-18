@@ -3,6 +3,7 @@
           system-name verbose? quiet? download-error? download-error-uri
           current-implementation-name command
           file-copy make-directory make-symbolic-link
+          call-with-current-working-directory
           current-directory set-current-directory!)
   (import (rnrs)
           (srfi :48)
@@ -15,6 +16,14 @@
   (define-condition-type &download &spon
     make-download-error download-error?
     (uri download-error-uri))
+
+  (define-syntax call-with-current-working-directory
+    (syntax-rules ()
+      ((_ dir proc)
+       (let ((cwd (current-directory)))
+         (set-current-directory! dir)
+         (let ((r proc))
+           (set-current-directory! cwd) r)))))
 
   (define-syntax do-procs
     (syntax-rules ()
@@ -99,10 +108,8 @@
            (install.ss (format "~A/install.ss" pkg-path)))
       (do-procs
        ((format "Setup package to ~A ..." (string-upcase system-name))
-        (let ((cwd (current-directory)))
-          (set-current-directory! pkg-path)
-          (let ((r (command impl install.ss)))
-            (set-current-directory! cwd) r))
+        (call-with-current-working-directory pkg-path
+          (command impl install.ss))
         #f
         (format "error in ~A" install.ss)))))
 
@@ -115,10 +122,8 @@
            (setup.impl.ss (format "~A/setup.~A.ss" pkg-path impl)))
       (do-procs
        ((format "Setup package to ~A ..." impl)
-        (let ((cwd (current-directory)))
-          (set-current-directory! pkg-path)
-          (let ((r (command impl (if (file-exists? setup.impl.ss) setup.impl.ss setup.ss))))
-            (set-current-directory! cwd) r))
+        (call-with-current-working-directory pkg-path
+          (command impl (if (file-exists? setup.impl.ss) setup.impl.ss setup.ss)))
         #f
         (format "error in ~A" setup.ss)))))
 
