@@ -17,6 +17,19 @@
     make-download-error download-error?
     (uri download-error-uri))
 
+  (define-record-type (version make-version version?)
+    (fields
+      (immutable v1 version-major)
+      (immutable v2 version-minor)
+      (immutable v3 version-patch)))
+
+  (define-record-type (pkginfo make-pkginfo pkginfo?)
+    (fields
+      (immutable name package-name)
+      (immutable version package-version)
+      (immutable depends package-depends)
+      (immutable description package-description)))
+
   (define-syntax call-with-current-working-directory
     (syntax-rules ()
       ((_ dir proc)
@@ -39,6 +52,44 @@
                       (format #t "----> ERROR: ~A~%" ng)))
                 res))
             ...))))
+
+  (define (read-package-list)
+    (let ((ht (make-eq-hashtable)))
+      (call-with-input-file
+        (format #f "~A/~A" base-path "package-list.sds")
+        (lambda (in)
+          (let loop ((i (read in)))
+            (unless (eof-object? i)
+              (let ((name (car i))
+                    (version (let ((j (assq 'version (cdr i))))
+                                  (and j
+                                       (list? (cdr j))
+                                       (= 3 (length (cdr j)))
+                                       (number? (list-ref j 1))
+                                       (number? (list-ref j 2))
+                                       (number? (list-ref j 3))
+                                       (make-version (list-ref j 1)
+                                                     (list-ref j 2)
+                                                     (list-ref j 3)))))
+                    (depends (let ((j (assq 'depends (cdr i))))
+                                  (and j (cdr j))))
+                    (description (let ((j (assq 'description (cdr i))))
+                                      (and j (apply string-append (cdr j))))))
+                (hashtable-set! ht name (make-pkginfo name version depends description)))
+              (loop (read in))))))
+      ht))
+
+  (define (get-pkginfo)
+    (let ((ht #f))
+      (lambda (package)
+        (unless ht
+          (set! ht (read-package-list)))
+        (hashtable-ref ht package #f))))
+
+  (define (version->string version)
+    (string-append (number->string (version-major version))
+               "." (number->string (version-minor version))
+               "." (number->string (version-patch version))))
 
   (define (cmd-wget uri dir)
     (or (apply command

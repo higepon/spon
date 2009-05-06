@@ -1,0 +1,3 @@
+(spon (version 0 0 20090506) (depends package-list) (description "Scheme Portable Library Network"))
+(package-list)
+(pkg-list (alias package-list))
