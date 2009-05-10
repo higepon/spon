@@ -28,7 +28,7 @@
     ((use)
      (let ((impl (caddr args)))
        (call-with-current-working-directory library-path
-         (command impl (string-append base-path "/setup." impl ".ss")))
+         (lambda () (command impl (string-append base-path "/setup." impl ".ss"))))
        (make-symbolic-link (string-append base-path "/spon." impl ".sh") command-path)))
     (else (exit #f))))
 

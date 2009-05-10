@@ -23,26 +23,18 @@
       (immutable v2 version-minor)
       (immutable v3 version-patch)))
 
-  (define-record-type (pkginfo make-pkginfo pkginfo?)
+  (define-record-type (pkg-stat make-pkg-stat pkg-stat?)
     (fields
-      (immutable name package-name)
-      (immutable version package-version)
-      (immutable depends package-depends)
-      (immutable description package-description)))
+      (immutable status pkg-stat-status)
+      (immutable version pkg-stat-version)))
 
-  (define-record-type (insinfo make-insinfo insinfo?)
+  (define-record-type (pkg-info make-pkg-info pkg-info?)
     (fields
-      (immutable name insinfo-name)
-      (immutable version insinfo-version)
-      (immutable status insinfo-status)))
-
-  (define-syntax call-with-current-working-directory
-    (syntax-rules ()
-      ((_ dir proc)
-       (let ((cwd (current-directory)))
-         (set-current-directory! dir)
-         (let ((r proc))
-           (set-current-directory! cwd) r)))))
+      (immutable name pkg-info-name)
+      (immutable version pkg-info-version)
+      (immutable depends pkg-info-depends)
+      (immutable description pkg-info-description)
+      (mutable status pkg-info-status pkg-info-status-set!)))
 
   (define-syntax do-procs
     (syntax-rules ()
@@ -58,6 +50,12 @@
                       (format #t "----> ERROR: ~A~%" ng)))
                 res))
             ...))))
+
+  (define (call-with-current-working-directory dir thunk)
+    (let ((cwd (current-directory)))
+      (set-current-directory! dir)
+      (let ((r (thunk)))
+        (set-current-directory! cwd) r)))
 
   (define (read-package-list)
     (let ((ht (make-eq-hashtable)))
@@ -80,30 +78,19 @@
                     (depends (let ((d (assq 'depends (cdr i))))
                                   (and d (cdr d))))
                     (description (let ((d (assq 'description (cdr i))))
-                                      (and d (apply string-append (cdr d))))))
-                (hashtable-set! ht name (make-pkginfo name version depends description)))
+                                      (and d (apply string-append (cdr d)))))
+                    (status #f))
+                (hashtable-set! ht name
+                  (make-pkg-info name version depends description status)))
               (loop (read in))))))
-      ht))
-
-  (define (get-pkginfo)
-    (let ((ht #f))
-      (lambda (package)
-        (unless ht
-          (set! ht (read-package-list)))
-        (hashtable-ref ht package #f))))
-
-  (define (read-install-information)
-    (let ((ht (make-eq-hashtable)))
       (call-with-input-file
         (format #f "~A/~A" base-path "install.sds")
         (lambda (in)
           (let loop ((i (read in)))
             (unless (eof-object? i)
               (let ((name (car i))
-                    (state (cond ((eq? 'installed (cadr i)) #t)
-                                 ((eq? 'uninstalled (cadr i)) #f)
-                                 ((cadr i) #t)
-                                 (else #f)))
+                    (status (cond ((cadr i) #t)
+                                  (else #f)))
                     (version (let ((v (assq 'version (cddr i))))
                                   (and v
                                        (list? (cdr v))
@@ -114,15 +101,22 @@
                                        (make-version (list-ref v 1)
                                                      (list-ref v 2)
                                                      (list-ref v 3))))))
-                (hashtable-set! ht name (make-insinfo name version state)))
+                (if (hashtable-contains? ht name)
+                    (let ((p (hashtable-ref ht name)))
+                      (pkg-info-status-set! p
+                        (make-pkg-stat status version))
+                      (hashtable-set! ht name p))
+                    (hashtable-set! ht name
+                      (make-pkg-info name #f #f #f
+                        (make-pkg-stat status version)))))
               (loop (read in))))))
       ht))
 
-  (define (get-insinfo)
+  (define (get-pkg-info)
     (let ((ht #f))
       (lambda (package)
         (unless ht
-          (set! ht (read-install-information)))
+          (set! ht (read-package-list)))
         (hashtable-ref ht package #f))))
 
   (define (version->string version)
@@ -134,6 +128,16 @@
     (list (version-major version)
           (version-minor version)
           (version-patch version)))
+
+  (define (package->string p)
+    (cond
+      ((pkg-info? p)
+       (if (version? (pkg-info-version p))
+           (string-append (symbol->string (pkg-info-name p)) "-" (version->string (pkg-info-version p)))
+           (symbol->string (pkg-info-name p))))
+      ((symbol? p) (symbol->string p))
+      ((string? p) p)
+      (else #f)))
 
   (define (cmd-wget uri dir)
     (or (apply command
@@ -204,7 +208,7 @@
       (do-procs
        ((format "Setup package to ~A ..." (string-upcase system-name))
         (call-with-current-working-directory pkg-path
-          (command impl install.ss))
+          (lambda () (command impl install.ss)))
         #f
         (format "error in ~A" install.ss)))))
 
@@ -218,7 +222,7 @@
       (do-procs
        ((format "Setup package to ~A ..." impl)
         (call-with-current-working-directory pkg-path
-          (command impl (if (file-exists? setup.impl.ss) setup.impl.ss setup.ss)))
+          (lambda () (command impl (if (file-exists? setup.impl.ss) setup.impl.ss setup.ss))))
         #f
         (format "error in ~A" setup.ss)))))
 
