@@ -139,6 +139,16 @@
       ((string? p) p)
       (else #f)))
 
+  (define (package-installed? p)
+    (cond
+      ((pkg-info? p)
+       (pkg-stat-status (pkg-info-status p)))
+      ((symbol? p)
+       (package-installed? ((get-pkg-info) p)))
+      ((string? p)
+       (package-installed? ((get-pkg-info) (string->symbol p))))
+      (else #f)))
+
   (define (cmd-wget uri dir)
     (or (apply command
                 ((get-config) "wget")
@@ -167,7 +177,7 @@
   (define (download package)
     (let* ((config (get-config))
            (download-uri (config "download-uri" download-uri))
-           (pkg-uri  (format "~A/~A.tar.gz" download-uri package))
+           (pkg-uri  (format "~A/~A.tar.gz" download-uri (package->string package)))
            (sig-uri  (format "~A.asc" pkg-uri))
            (src-path (config "source-path" source-path)))
       (show-progress (format "Downloading package: ~A ..." pkg-uri))
@@ -180,7 +190,7 @@
   (define (verify package)
     (let* ((config (get-config))
            (src-path (config "source-path" source-path))
-           (pkg-file (format "~A/~A.tar.gz" src-path package))
+           (pkg-file (format "~A/~A.tar.gz" src-path (package->string package)))
            (sig-file (format "~A.asc" pkg-file)))
       (or (not (config "gpg" #f))
           (do-procs
@@ -192,7 +202,7 @@
   (define (decompress package)
     (let* ((config (get-config))
            (src-path (config "source-path" source-path))
-           (pkg-file (format "~A/~A.tar.gz" src-path package)))
+           (pkg-file (format "~A/~A.tar.gz" src-path (package->string package))))
       (do-procs
        ("Decompressing package ..."
         (cmd-tar pkg-file src-path)
@@ -203,7 +213,7 @@
     (let* ((config (get-config))
            (impl (current-implementation-name))
            (src-path (config "source-path" source-path))
-           (pkg-path (format "~A/~A" source-path package))
+           (pkg-path (format "~A/~A" source-path (package->string package)))
            (install.ss (format "~A/install.ss" pkg-path)))
       (do-procs
        ((format "Setup package to ~A ..." (string-upcase system-name))
@@ -216,7 +226,7 @@
     (let* ((config (get-config))
            (impl (current-implementation-name))
            (src-path (config "source-path" source-path))
-           (pkg-path (format "~A/~A" source-path package))
+           (pkg-path (format "~A/~A" source-path (package->string package)))
            (setup.ss (format "~A/setup.ss" pkg-path))
            (setup.impl.ss (format "~A/setup.~A.ss" pkg-path impl)))
       (do-procs
@@ -227,14 +237,27 @@
         (format "error in ~A" setup.ss)))))
 
   (define (install package)
-    (let ((r (and (download package)
-                  (verify package)
-                  (decompress package)
-                  (initialize package)
-                  (setup package))))
-      (unless (quiet?)
-        (if r
-          (format #t "----> ~A is successfully installed.~%" package)
-          (format #t "----> ~A install failed.~%" package)))
-      r))
+    (if (package-installed? package)
+        (format #t "----> ~A is already installed.~%" (package->string package))
+        (let ((pkg-info (get-pkg-info)))
+          (let loop ((pi (pkg-info package)))
+            (when pi
+              (let ((depends (pkg-info-depends pi)))
+                (when depends
+                  (for-each
+                    (lambda (p)
+                      (let ((pi (pkg-info p)))
+                        (unless (package-installed? pi) (loop pi))))
+                    depends))))
+            (let ((p (if (pkg-info? pi) pi package)))
+              (let ((r (and (download p)
+                            (verify p)
+                            (decompress p)
+                            (initialize p)
+                            (setup p))))
+                (unless (quiet?)
+                  (if r
+                    (format #t "----> ~A is successfully installed.~%" (package->string p))
+                    (format #t "----> ~A install failed.~%" (package->string p))))
+                r))))))
   )
