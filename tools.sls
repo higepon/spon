@@ -59,65 +59,60 @@
 
   (define (read-package-list)
     (let ((ht (make-eq-hashtable)))
-      (call-with-input-file
-        (format #f "~A/~A" base-path "package-list.sds")
-        (lambda (in)
-          (let loop ((i (read in)))
-            (unless (eof-object? i)
-              (let ((name (car i))
-                    (version (let ((v (assq 'version (cdr i))))
-                                  (and v
-                                       (list? (cdr v))
-                                       (= 3 (length (cdr v)))
-                                       (number? (list-ref v 1))
-                                       (number? (list-ref v 2))
-                                       (number? (list-ref v 3))
-                                       (make-version (list-ref v 1)
-                                                     (list-ref v 2)
-                                                     (list-ref v 3)))))
-                    (depends (let ((d (assq 'depends (cdr i))))
-                                  (and d (cdr d))))
-                    (description (let ((d (assq 'description (cdr i))))
-                                      (and d (apply string-append (cdr d)))))
-                    (status #f))
-                (hashtable-set! ht name
-                  (make-pkg-info name version depends description status)))
-              (loop (read in))))))
-      (call-with-input-file
-        (format #f "~A/~A" base-path "install.sds")
-        (lambda (in)
-          (let loop ((i (read in)))
-            (unless (eof-object? i)
-              (let ((name (car i))
-                    (status (cond ((cadr i) #t)
-                                  (else #f)))
-                    (version (let ((v (assq 'version (cddr i))))
-                                  (and v
-                                       (list? (cdr v))
-                                       (= 3 (length (cdr v)))
-                                       (number? (list-ref v 1))
-                                       (number? (list-ref v 2))
-                                       (number? (list-ref v 3))
-                                       (make-version (list-ref v 1)
-                                                     (list-ref v 2)
-                                                     (list-ref v 3))))))
-                (if (hashtable-contains? ht name)
-                    (let ((p (hashtable-ref ht name)))
-                      (pkg-info-status-set! p
-                        (make-pkg-stat status version))
-                      (hashtable-set! ht name p))
+      (let ((file (format #f "~A/~A" base-path "package-list.sds")))
+        (when (file-exists? file)
+          (call-with-input-file file
+            (lambda (in)
+              (let loop ((i (read in)))
+                (unless (eof-object? i)
+                  (let ((name (car i))
+                        (version (let ((v (assq 'version (cdr i))))
+                                      (and v
+                                           (list? (cdr v))
+                                           (= 3 (length (cdr v)))
+                                           (number? (list-ref v 1))
+                                           (number? (list-ref v 2))
+                                           (number? (list-ref v 3))
+                                           (make-version (list-ref v 1)
+                                                         (list-ref v 2)
+                                                         (list-ref v 3)))))
+                        (depends (let ((d (assq 'depends (cdr i))))
+                                      (and d (cdr d))))
+                        (description (let ((d (assq 'description (cdr i))))
+                                          (and d (apply string-append (cdr d)))))
+                        (status #f))
                     (hashtable-set! ht name
-                      (make-pkg-info name #f #f #f
-                        (make-pkg-stat status version)))))
-              (loop (read in))))))
+                      (make-pkg-info name version depends description status)))
+                  (loop (read in))))))))
+      (let ((file (format #f "~A/~A" base-path "install.sds")))
+        (when (file-exists? file)
+          (call-with-input-file file
+            (lambda (in)
+              (let loop ((i (read in)))
+                (unless (eof-object? i)
+                  (let ((name (car i))
+                        (status (cond ((cadr i) #t)
+                                      (else #f)))
+                        (version (let ((v (assq 'version (cddr i))))
+                                      (and v
+                                           (list? (cdr v))
+                                           (= 3 (length (cdr v)))
+                                           (number? (list-ref v 1))
+                                           (number? (list-ref v 2))
+                                           (number? (list-ref v 3))
+                                           (make-version (list-ref v 1)
+                                                         (list-ref v 2)
+                                                         (list-ref v 3))))))
+                    (if (hashtable-contains? ht name)
+                        (let ((p (hashtable-ref ht name)))
+                          (pkg-info-status-set! p
+                            (make-pkg-stat status version))
+                          (hashtable-set! ht name p))
+                        (hashtable-set! ht name
+                          (make-pkg-info name #f #f #f
+                            (make-pkg-stat status version)))))
+                  (loop (read in))))))))
       ht))
-
-  (define (get-pkg-info)
-    (let ((ht #f))
-      (lambda (package)
-        (unless ht
-          (set! ht (read-package-list)))
-        (hashtable-ref ht package #f))))
 
   (define (version->string version)
     (string-append (number->string (version-major version))
@@ -125,28 +120,33 @@
                "." (number->string (version-patch version))))
 
   (define (version->list version)
-    (list (version-major version)
+    (list 'version
+          (version-major version)
           (version-minor version)
           (version-patch version)))
 
+  (define (package->symbol p)
+    (cond
+      ((symbol? p) p)
+      ((string? p) (string->symbol p))
+      ((pkg-info? p) (pkg-info-name p))
+      (else #f)))
+
   (define (package->string p)
     (cond
+      ((symbol? p) (symbol->string p))
+      ((string? p) p)
       ((pkg-info? p)
        (if (version? (pkg-info-version p))
            (string-append (symbol->string (pkg-info-name p)) "-" (version->string (pkg-info-version p)))
            (symbol->string (pkg-info-name p))))
-      ((symbol? p) (symbol->string p))
-      ((string? p) p)
       (else #f)))
 
-  (define (package-installed? p)
+  (define (package-installed? ht p)
     (cond
-      ((pkg-info? p)
-       (pkg-stat-status (pkg-info-status p)))
-      ((symbol? p)
-       (package-installed? ((get-pkg-info) p)))
-      ((string? p)
-       (package-installed? ((get-pkg-info) (string->symbol p))))
+      ((pkg-info? p) (pkg-stat-status (pkg-info-status p)))
+      ((symbol? p) (package-installed? ht (hashtable-ref ht p #f)))
+      ((string? p) (package-installed? ht (string->symbol p)))
       (else #f)))
 
   (define (cmd-wget uri dir)
@@ -237,18 +237,20 @@
         (format "error in ~A" setup.ss)))))
 
   (define (install package)
-    (if (package-installed? package)
-        (format #t "----> ~A is already installed.~%" (package->string package))
-        (let ((pkg-info (get-pkg-info)))
-          (let loop ((pi (pkg-info package)))
+    (let ((pkg-ht (read-package-list)))
+      (if (package-installed? pkg-ht package)
+          (begin
+            (format #t "----> ~A is already installed.~%" (package->string package))
+            #f)
+          (let install ((pi (hashtable-ref pkg-ht (package->symbol package) #f)))
             (when pi
               (let ((depends (pkg-info-depends pi)))
                 (when depends
-                  (for-each
-                    (lambda (p)
-                      (let ((pi (pkg-info p)))
-                        (unless (package-installed? pi) (loop pi))))
-                    depends))))
+                  (let loop ((ls depends))
+                    (when (pair? ls)
+                      (let ((pi (hashtable-ref pkg-ht (car ls) #f)))
+                        (unless (package-installed? pi) (install pi)))
+                      (loop (cdr ls)))))))
             (let ((p (if (pkg-info? pi) pi package)))
               (let ((r (and (download p)
                             (verify p)
@@ -259,5 +261,11 @@
                   (if r
                     (format #t "----> ~A is successfully installed.~%" (package->string p))
                     (format #t "----> ~A install failed.~%" (package->string p))))
+                (when r
+                  (if (pkg-info? pi)
+                    (pkg-info-status-set! pi (make-pkg-stat #t (pkg-info-version pi)))
+                    (hashtable-set! pkg-ht
+                      (package->symbol package)
+                      (make-pkg-info package #f #f #f (make-pkg-stat #t #f)))))
                 r))))))
   )
