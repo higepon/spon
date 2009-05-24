@@ -114,6 +114,23 @@
                   (loop (read in))))))))
       ht))
 
+  (define (write-install-status pkg-ht)
+    (let ((file (format #f "~A/~A" base-path "install.sds")))
+      (call-with-output-file file
+        (lambda (out)
+          (let-values (((ks vs) (hashtable-entries pkg-ht)))
+            (vector-for-each
+              (lambda (key val)
+                (let ((stat (pkg-info-status val)))
+                  (if (pkg-stat? stat)
+                    (if (version? (pkg-stat-version stat))
+                      (write (list key (pkg-stat-status stat)
+                        (version->list (pkg-stat-version stat))) out)
+                      (write (list key (pkg-stat-status stat)) out))
+                    (write (list key stat) out))
+                  (newline out)))
+              ks vs))))))
+
   (define (version->string version)
     (string-append (number->string (version-major version))
                "." (number->string (version-minor version))
@@ -144,7 +161,9 @@
 
   (define (package-installed? ht p)
     (cond
-      ((pkg-info? p) (pkg-stat-status (pkg-info-status p)))
+      ((pkg-info? p)
+       (let ((stat (pkg-info-status p)))
+         (if (pkg-stat? stat) (pkg-stat-status stat) stat)))
       ((symbol? p) (package-installed? ht (hashtable-ref ht p #f)))
       ((string? p) (package-installed? ht (string->symbol p)))
       (else #f)))
@@ -237,35 +256,39 @@
         (format "error in ~A" setup.ss)))))
 
   (define (install package)
+    (define (install-rec package pkg-ht)
+      (let ((pi (hashtable-ref pkg-ht (package->symbol package) #f)))
+        (when pi
+          (let ((depends (pkg-info-depends pi)))
+            (when depends
+              (let loop ((ls depends))
+                (when (pair? ls)
+                  (unless (package-installed? (car ls))
+                    (install-rec (car ls) pkg-ht))
+                  (loop (cdr ls)))))))
+        (let ((p (if (pkg-info? pi) pi package)))
+          (let ((r (and (download p)
+                        (verify p)
+                        (decompress p)
+                        (initialize p)
+                        (setup p))))
+            (unless (quiet?)
+              (if r
+                (format #t "----> ~A is successfully installed.~%" (package->string p))
+                (format #t "----> ~A install failed.~%" (package->string p))))
+            (when r
+              (if (pkg-info? pi)
+                (pkg-info-status-set! pi (make-pkg-stat #t (pkg-info-version pi)))
+                (hashtable-set! pkg-ht
+                  (package->symbol package)
+                  (make-pkg-info package #f #f #f (make-pkg-stat #t #f)))))
+                r))))
     (let ((pkg-ht (read-package-list)))
       (if (package-installed? pkg-ht package)
           (begin
             (format #t "----> ~A is already installed.~%" (package->string package))
             #f)
-          (let install ((pi (hashtable-ref pkg-ht (package->symbol package) #f)))
-            (when pi
-              (let ((depends (pkg-info-depends pi)))
-                (when depends
-                  (let loop ((ls depends))
-                    (when (pair? ls)
-                      (let ((pi (hashtable-ref pkg-ht (car ls) #f)))
-                        (unless (package-installed? pi) (install pi)))
-                      (loop (cdr ls)))))))
-            (let ((p (if (pkg-info? pi) pi package)))
-              (let ((r (and (download p)
-                            (verify p)
-                            (decompress p)
-                            (initialize p)
-                            (setup p))))
-                (unless (quiet?)
-                  (if r
-                    (format #t "----> ~A is successfully installed.~%" (package->string p))
-                    (format #t "----> ~A install failed.~%" (package->string p))))
-                (when r
-                  (if (pkg-info? pi)
-                    (pkg-info-status-set! pi (make-pkg-stat #t (pkg-info-version pi)))
-                    (hashtable-set! pkg-ht
-                      (package->symbol package)
-                      (make-pkg-info package #f #f #f (make-pkg-stat #t #f)))))
-                r))))))
+          (let ((r (install-rec package pkg-ht)))
+            (write-install-status pkg-ht)
+            r))))
   )
