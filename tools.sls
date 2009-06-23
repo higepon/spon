@@ -122,13 +122,12 @@
             (vector-for-each
               (lambda (key val)
                 (let ((stat (pkg-info-status val)))
-                  (if (pkg-stat? stat)
+                  (when (pkg-stat? stat)
                     (if (version? (pkg-stat-version stat))
                       (write (list key (pkg-stat-status stat)
                         (version->list (pkg-stat-version stat))) out)
                       (write (list key (pkg-stat-status stat)) out))
-                    (write (list key stat) out))
-                  (newline out)))
+                    (newline out))))
               ks vs))))))
 
   (define (version->string version)
@@ -258,7 +257,7 @@
   (define (install package)
     (define (install-rec package pkg-ht)
       (let ((pi (hashtable-ref pkg-ht (package->symbol package) #f)))
-        (when pi
+        (when (pkg-info? pi)
           (let ((depends (pkg-info-depends pi)))
             (when depends
               (let loop ((ls depends))
@@ -282,7 +281,7 @@
                 (hashtable-set! pkg-ht
                   (package->symbol package)
                   (make-pkg-info package #f #f #f (make-pkg-stat #t #f)))))
-                r))))
+            r))))
     (let ((pkg-ht (read-package-list)))
       (if (package-installed? pkg-ht package)
           (begin
@@ -291,4 +290,49 @@
           (let ((r (install-rec package pkg-ht)))
             (write-install-status pkg-ht)
             r))))
+
+  (define (update package)
+    (define (updatable? pi)
+      (and (pkg-info? pi)
+        (let ((stat (pkg-info-status pi)))
+          (and (pkg-stat? stat)
+            (version<? (pkg-stat-version stat) (pkg-info-version pi))))))
+    (define (update-rec package pkg-ht)
+      (let ((pi (hashtable-ref pkg-ht (package->symbol package) #f)))
+        (if (updatable? pi)
+          (begin
+            (let ((depends (pkg-info-depends pi)))
+              (when depends
+                (let loop ((ls depends))
+                  (and (pair? ls)
+                    (update-rec (car ls) pkg-ht)))))
+            (let ((r (and (download pi)
+                          (verify pi)
+                          (decompress pi)
+                          (initialize pi)
+                          (setup pi 'update))))
+              (unless (quiet?)
+                (if r
+                  (format #t "----> ~A is successfully update.~%" (package->string pi))
+                  (format #t "----> ~A update failed.~%" (package->string pi))))
+              (when r
+                (if (pkg-info? pi)
+                  (pkg-info-status-set! pi (make-pkg-stat #t (pkg-info-version pi)))
+                  (hashtable-set! pkg-ht
+                    (package->symbol package)
+                    (make-pkg-info package #f #f #f (make-pkg-stat #t #f)))))
+              r))
+          #f)))
+    (let ((pkg-ht (read-package-list)))
+      (let ((pi (hashtable-ref pkg-ht (package->symbol package) #f)))
+        (if (updatable? pi)
+          (let ((r (update-red package pkg-ht)))
+            (write-install-status pkg-ht)
+            r)
+          (begin
+            (format #t "----> ~A can't update." (package->string package))
+            #f)))))
+
+  (define (uninstall package)
+    #f)
   )
