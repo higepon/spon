@@ -130,6 +130,16 @@
                     (newline out))))
               ks vs))))))
 
+  (define (version<? v1 v2)
+    (and (version? v1) (version? v2)
+      (cond ((< (version-major v1) (version-major v2)) #t)
+            ((> (version-major v1) (version-major v2)) #f)
+            (else (cond ((< (version-minor v1) (version-minor v2)) #t)
+                        ((> (version-minor v1) (version-minor v2)) #f)
+                        (else (cond ((< (version-patch v1) (version-patch v2)) #t)
+                                    ((> (version-patch v1) (version-patch v2)) #f)
+                                    (else #f))))))))
+
   (define (version->string version)
     (string-append (number->string (version-major version))
                "." (number->string (version-minor version))
@@ -158,13 +168,13 @@
            (symbol->string (pkg-info-name p))))
       (else #f)))
 
-  (define (package-installed? ht p)
+  (define (package-installed? p ht)
     (cond
       ((pkg-info? p)
        (let ((stat (pkg-info-status p)))
          (if (pkg-stat? stat) (pkg-stat-status stat) stat)))
-      ((symbol? p) (package-installed? ht (hashtable-ref ht p #f)))
-      ((string? p) (package-installed? ht (string->symbol p)))
+      ((symbol? p) (package-installed? (hashtable-ref ht p #f) ht))
+      ((string? p) (package-installed? (string->symbol p) ht))
       (else #f)))
 
   (define (cmd-wget uri dir)
@@ -227,7 +237,7 @@
         #f
         "error in decompressing package"))))
 
-  (define (initialize package)
+  (define (initialize package mode)
     (let* ((config (get-config))
            (impl (current-implementation-name))
            (src-path (config "source-path" source-path))
@@ -236,11 +246,12 @@
       (do-procs
        ((format "Setup package to ~A ..." (string-upcase system-name))
         (call-with-current-working-directory pkg-path
-          (lambda () (command impl install.ss)))
+          (lambda ()
+            (command impl install.ss (symbol->string mode))))
         #f
         (format "error in ~A" install.ss)))))
 
-  (define (setup package)
+  (define (setup package mode)
     (let* ((config (get-config))
            (impl (current-implementation-name))
            (src-path (config "source-path" source-path))
@@ -250,40 +261,45 @@
       (do-procs
        ((format "Setup package to ~A ..." impl)
         (call-with-current-working-directory pkg-path
-          (lambda () (command impl (if (file-exists? setup.impl.ss) setup.impl.ss setup.ss))))
+          (lambda ()
+            (command impl
+              (if (file-exists? setup.impl.ss) setup.impl.ss setup.ss)
+              (symbol->string mode))))
         #f
         (format "error in ~A" setup.ss)))))
 
   (define (install package)
     (define (install-rec package pkg-ht)
       (let ((pi (hashtable-ref pkg-ht (package->symbol package) #f)))
-        (when (pkg-info? pi)
-          (let ((depends (pkg-info-depends pi)))
-            (when depends
-              (let loop ((ls depends))
-                (when (pair? ls)
-                  (unless (package-installed? (car ls))
-                    (install-rec (car ls) pkg-ht))
-                  (loop (cdr ls)))))))
-        (let ((p (if (pkg-info? pi) pi package)))
-          (let ((r (and (download p)
-                        (verify p)
-                        (decompress p)
-                        (initialize p)
-                        (setup p))))
-            (unless (quiet?)
-              (if r
-                (format #t "----> ~A is successfully installed.~%" (package->string p))
-                (format #t "----> ~A install failed.~%" (package->string p))))
-            (when r
-              (if (pkg-info? pi)
-                (pkg-info-status-set! pi (make-pkg-stat #t (pkg-info-version pi)))
-                (hashtable-set! pkg-ht
-                  (package->symbol package)
-                  (make-pkg-info package #f #f #f (make-pkg-stat #t #f)))))
-            r))))
+        (if (package-installed? pi pkg-ht)
+            #f
+            (begin
+              (when (pkg-info? pi)
+                (let ((depends (pkg-info-depends pi)))
+                  (when depends
+                    (let loop ((ls depends))
+                      (when (pair? ls)
+                            (install-rec (car ls) pkg-ht)
+                            (loop (cdr ls)))))))
+              (let ((p (if (pkg-info? pi) pi package)))
+                (let ((r (and (download p)
+                              (verify p)
+                              (decompress p)
+                              (initialize p 'install)
+                              (setup p 'install))))
+                  (unless (quiet?)
+                    (if r
+                      (format #t "----> ~A is successfully installed.~%" (package->string p))
+                      (format #t "----> ~A install failed.~%" (package->string p))))
+                  (when r
+                    (if (pkg-info? pi)
+                      (pkg-info-status-set! pi (make-pkg-stat #t (pkg-info-version pi)))
+                      (hashtable-set! pkg-ht
+                        (package->symbol package)
+                        (make-pkg-info package #f #f #f (make-pkg-stat #t #f)))))
+                  r))))))
     (let ((pkg-ht (read-package-list)))
-      (if (package-installed? pkg-ht package)
+      (if (package-installed? package pkg-ht)
           (begin
             (format #t "----> ~A is already installed.~%" (package->string package))
             #f)
@@ -304,12 +320,13 @@
             (let ((depends (pkg-info-depends pi)))
               (when depends
                 (let loop ((ls depends))
-                  (and (pair? ls)
-                    (update-rec (car ls) pkg-ht)))))
+                  (when (pair? ls)
+                        (update-rec (car ls) pkg-ht)
+                        (loop (cdr ls))))))
             (let ((r (and (download pi)
                           (verify pi)
                           (decompress pi)
-                          (initialize pi)
+                          (initialize pi 'update)
                           (setup pi 'update))))
               (unless (quiet?)
                 (if r
@@ -326,7 +343,7 @@
     (let ((pkg-ht (read-package-list)))
       (let ((pi (hashtable-ref pkg-ht (package->symbol package) #f)))
         (if (updatable? pi)
-          (let ((r (update-red package pkg-ht)))
+          (let ((r (update-rec package pkg-ht)))
             (write-install-status pkg-ht)
             r)
           (begin
