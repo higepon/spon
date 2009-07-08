@@ -53,9 +53,10 @@
 
   (define (call-with-current-working-directory dir thunk)
     (let ((cwd (current-directory)))
-      (set-current-directory! dir)
-      (let ((r (thunk)))
-        (set-current-directory! cwd) r)))
+      (dynamic-wind
+        (lambda () (set-current-directory! dir))
+        thunk
+        (lambda () (set-current-directory! cwd)))))
 
   (define (read-package-list)
     (let ((ht (make-eq-hashtable)))
