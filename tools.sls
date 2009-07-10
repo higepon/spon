@@ -3,8 +3,7 @@
           system-name verbose? quiet? download-error? download-error-uri
           current-implementation-name command
           file-copy make-directory make-symbolic-link
-          call-with-current-working-directory
-          current-directory set-current-directory!)
+          current-directory)
   (import (rnrs)
           (srfi :48)
           (spon config)
@@ -50,13 +49,6 @@
                       (format #t "----> ERROR: ~A~%" ng)))
                 res))
             ...))))
-
-  (define (call-with-current-working-directory dir thunk)
-    (let ((cwd (current-directory)))
-      (dynamic-wind
-        (lambda () (set-current-directory! dir))
-        thunk
-        (lambda () (set-current-directory! cwd)))))
 
   (define (read-package-list)
     (let ((ht (make-eq-hashtable)))
@@ -182,7 +174,7 @@
     (or (apply command
                 ((get-config) "wget")
                 "-N" "-P" dir uri (if (quiet?) '("-q") '()))
-         (raise (make-download-error uri))))
+        (raise (make-download-error uri))))
 
   (define (cmd-gpg signature file)
     (let ((gpg ((get-config) "gpg" #f)))
@@ -246,9 +238,8 @@
            (install.ss (format "~A/install.ss" pkg-path)))
       (do-procs
        ((format "Setup package to ~A ..." (string-upcase system-name))
-        (call-with-current-working-directory pkg-path
-          (lambda ()
-            (command impl install.ss (symbol->string mode))))
+        (parameterize ((current-directory pkg-path))
+          (command impl install.ss (symbol->string mode)))
         #f
         (format "error in ~A" install.ss)))))
 
@@ -261,11 +252,10 @@
            (setup.impl.ss (format "~A/setup.~A.ss" pkg-path impl)))
       (do-procs
        ((format "Setup package to ~A ..." impl)
-        (call-with-current-working-directory pkg-path
-          (lambda ()
-            (command impl
-              (if (file-exists? setup.impl.ss) setup.impl.ss setup.ss)
-              (symbol->string mode))))
+        (parameterize ((current-directory pkg-path))
+          (command impl
+                   (if (file-exists? setup.impl.ss) setup.impl.ss setup.ss)
+                   (symbol->string mode)))
         #f
         (format "error in ~A" setup.ss)))))
 

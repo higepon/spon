@@ -5,7 +5,7 @@
           make-directory
           make-symbolic-link
           current-directory
-          set-current-directory!)
+          )
   (import (rnrs)
           (only (core)
                 current-directory
@@ -42,8 +42,5 @@
 
   (define (make-symbolic-link target link)
     (command "ln" "-sf" target link))
-
-  (define (set-current-directory! dir)
-    (current-directory dir))
 
   ) ;[end]

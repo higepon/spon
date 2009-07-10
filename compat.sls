@@ -5,7 +5,7 @@
           make-directory
           make-symbolic-link
           current-directory
-          set-current-directory!)
+          )
   (import (rnrs)
           (spon config))
 

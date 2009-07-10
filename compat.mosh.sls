@@ -5,9 +5,9 @@
           make-directory
           make-symbolic-link
           current-directory
-          set-current-directory!)
+          )
   (import (rnrs)
-          (only (mosh) current-directory set-current-directory!)
+          (prefix (only (mosh) current-directory set-current-directory!) mosh:)
           (only (mosh process) spawn waitpid pipe)
           (spon config))
 
@@ -40,4 +40,9 @@
   (define (make-symbolic-link target link)
     (command "ln" "-sf" target link))
 
+  (define current-directory
+    (make-parameter (mosh:current-directory)
+      (lambda (val)
+        (mosh:set-current-directory! val)
+        val)))
   )
