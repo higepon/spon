@@ -7,6 +7,7 @@
           current-directory
           )
   (import (rnrs)
+          (srfi :39)
           (prefix (only (mosh) current-directory set-current-directory!) mosh:)
           (only (mosh process) spawn waitpid pipe)
           (spon config))
