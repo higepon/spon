@@ -1,7 +1,7 @@
 #!/bin/sh
 
 LN=/bin/ln
-SED=/bin/sed
+SED=/usr/bin/sed
 INSTALL=/usr/bin/install
 
 SCHEME_SCRIPT=${1:-mosh}
@@ -16,14 +16,15 @@ SPON_SRC=$SPON_HOME/src
 SPON_SHARE=$SPON_HOME/share
 SPON_TMP=/tmp
 
-$SED -e "18 c (define download-uri \"$SPON_URI\")" \
-     -e "19 c (define base-path \"$SPON_HOME\")" \
-     -e "20 c (define command-path \"$SPON_COMMAND\")" \
-     -e "21 c (define library-path \"$SPON_LIB\")" \
-     -e "22 c (define document-path \"$SPON_DOC\")" \
-     -e "23 c (define source-path \"$SPON_SRC\")" \
-     -e "24 c (define share-path \"$SPON_SHARE\")" \
-     -e "25 c (define temporary-path \"$SPON_TMP\")" \
+$SED -e "18,25c\\
+(define download-uri \"$SPON_URI\")\\
+(define base-path \"$SPON_HOME\")\\
+(define command-path \"$SPON_COMMAND\")\\
+(define library-path \"$SPON_LIB\")\\
+(define document-path \"$SPON_DOC\")\\
+(define source-path \"$SPON_SRC\")\\
+(define share-path \"$SPON_SHARE\")\\
+(define temporary-path \"$SPON_TMP\")" \
      config.tmpl.sls > config.sls
 
 echo -e "#!/bin/sh\nmosh $SPON_HOME/spon.ss \$*" > spon.mosh.sh
