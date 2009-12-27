@@ -1,9 +1,6 @@
 (library (spon compat)
   (export implementation-name
           command
-          file-copy
-          make-directory
-          make-symbolic-link
           current-directory
           )
   (import (rnrs)
@@ -32,15 +29,4 @@
                      (unless (eof-object? err)
                        (put-string (current-error-port) err)))
                    (or status (loop (waitpid pid #f)))))))))))
-
-  ;; copied from compat.ypsilon.sls for now.
-  ;; must be refactor.
-  (define (file-copy src dst mode)
-    (command "install" "-m" (number->string mode 8) src dst))
-
-  (define (make-directory dir mode)
-    (command "install" "-m" (number->string mode 8) "-d" dir))
-
-  (define (make-symbolic-link target link)
-    (command "ln" "-sf" target link))
   )

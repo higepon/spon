@@ -34,14 +34,4 @@
                     (unless (eof-object? error)
                       (put-string (current-error-port) error)))
                   (or status (loop (process-wait pid #t)))))))))) ; nohang = #f
-
-  (define (file-copy src dst mode)
-    (command "install" "-m" (number->string mode 8) src dst))
-
-  (define (make-directory dir mode)
-    (command "install" "-m" (number->string mode 8) "-d" dir))
-
-  (define (make-symbolic-link target link)
-    (command "ln" "-sf" target link))
-
   ) ;[end]

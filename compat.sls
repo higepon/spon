@@ -1,9 +1,6 @@
 (library (spon compat)
   (export implementation-name
           command
-          file-copy
-          make-directory
-          make-symbolic-link
           current-directory
           )
   (import (rnrs)

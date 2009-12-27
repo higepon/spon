@@ -1,9 +1,6 @@
 (library (spon compat)
   (export implementation-name
           command
-          file-copy
-          make-directory
-          make-symbolic-link
           current-directory
           )
   (import (rnrs)
@@ -31,15 +28,6 @@
      [else
       (let-values ([(pid status) (spawn2->null cmd args)])
         (zero? status))]))
-
-  (define (file-copy src dst mode)
-    (command "install" "-m" (number->string mode 8) src dst))
-
-  (define (make-directory dir mode)
-    (command "install" "-m" (number->string mode 8) "-d" dir))
-
-  (define (make-symbolic-link target link)
-    (command "ln" "-sf" target link))
 
   (define current-directory
     (make-parameter (mosh:current-directory)

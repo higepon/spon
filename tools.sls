@@ -36,6 +36,15 @@
      (immutable description pkg-info-description)
      (mutable status pkg-info-status pkg-info-status-set!)))
 
+  (define (file-copy src dst mode)
+    (command "install" "-m" (number->string mode 8) src dst))
+
+  (define (make-directory dir mode)
+    (command "install" "-m" (number->string mode 8) "-d" dir))
+
+  (define (make-symbolic-link target link)
+    (command "ln" "-sf" target link))
+
   (define-syntax do-procs
     (syntax-rules ()
       ((_ (pre cmd ok ng) ...)
