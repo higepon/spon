@@ -1,7 +1,7 @@
 (library (spon tools)
   (export download verify decompress initialize setup install
           system-name verbose? quiet? download-error? download-error-uri
-          current-implementation-name command
+          implementation-name command
           file-copy make-directory make-symbolic-link
           current-directory)
   (import (rnrs)
@@ -219,7 +219,7 @@
 
   (define (initialize package mode)
     (let* ((config (get-config))
-           (impl (current-implementation-name))
+           (impl (implementation-name))
            (src-path (config "source-path" source-path))
            (pkg-path (format "~A/~A" source-path (package->string package)))
            (install.ss (format "~A/install.ss" pkg-path)))
@@ -232,7 +232,7 @@
 
   (define (setup package mode)
     (let* ((config (get-config))
-           (impl (current-implementation-name))
+           (impl (implementation-name))
            (src-path (config "source-path" source-path))
            (pkg-path (format "~A/~A" source-path (package->string package)))
            (setup.ss (format "~A/setup.ss" pkg-path))

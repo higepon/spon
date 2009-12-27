@@ -1,5 +1,5 @@
 (library (spon compat)
-  (export current-implementation-name
+  (export implementation-name
           command
           file-copy
           make-directory
@@ -11,7 +11,7 @@
           (only (ikarus) current-directory)
           (ikarus ipc))
 
-  (define (current-implementation-name) "ikarus")
+  (define (implementation-name) "ikarus")
 
   (define (command cmd . args)
     (let-values (([pid p-stdin p-stdout p-stderr] (apply process cmd args)))
